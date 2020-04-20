@@ -160,8 +160,8 @@ if [ -f "${src_rom}" ]
 then
     echo "Found ROM file: ${src_rom}"
 else
-	echo "Could not locate ROM file for \"${rom_name}\". Exiting."
-	exit 1
+    echo "Could not locate ROM file for \"${rom_name}\". Exiting."
+    exit 1
 fi
 
 # Replace any characters in the game name that are likely to confuse the file system.
@@ -179,10 +179,10 @@ mkdir -p ${staging_dir}/save
 src_boxart=${src_dir_boxart}/${rom_name}.png
 if [ -f "${src_boxart}" ]
 then
-	cp -p ${src_boxart} ${staging_dir}/boxart/boxart.png
+    cp -p ${src_boxart} ${staging_dir}/boxart/boxart.png
 else
     echo "Custom box art not found. Using default box art"
-	cp -p ${default_boxart} ${staging_dir}/boxart/boxart.png
+    cp -p ${default_boxart} ${staging_dir}/boxart/boxart.png
 fi
 
 # Pull in bezel from the source dir. If none exists, assume no bezel.
@@ -190,8 +190,8 @@ src_bezel=${src_dir_bezels}/${rom_name}.png
 has_bezel=false
 if [ -f "${src_bezel}" ]
 then
-	cp -p ${src_bezel} ${staging_dir}/boxart/addon.z.png
-	has_bezel=true
+    cp -p ${src_bezel} ${staging_dir}/boxart/addon.z.png
+    has_bezel=true
 elif [ -f "${default_bezel}" ]
 then
     echo "Custom bezel not found. Using default bezel."
@@ -220,9 +220,9 @@ cat ${script_dir}/defaults/cartridge.xml | sed "s|GAME_NAME|${game_name}|g" > ${
 
 if [ "${has_bezel}" = true ]
 then
-	exec_src=${script_dir}/defaults/exec_bezel.sh
+    exec_src=${script_dir}/defaults/exec_bezel.sh
 else
-	exec_src=${script_dir}/defaults/exec.sh
+    exec_src=${script_dir}/defaults/exec.sh
 fi
 
 cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_name}.zip|g" > ${staging_dir}/exec.sh
