@@ -1,11 +1,65 @@
 # saucepan
 Create a UCE file by pulling source files from various locations
 
+## What It Do
+
+I managed to manually create UCE files with the Windows Add-On Tool for
+about 30 minutes before I started to go completely bugnuts.
+
+But rather than succumb to madness by a thousand clicks, I put together this
+helpful Linux script instead.
+
+You simply create subdirectories (or links to other subdirectories) for your
+box art, bezels, cores, and ROMs in the resources folder. In those subdirectories,
+the box art, bezel, and ROM files for a given game must have the same "base name"
+(i.e., the part of the file name before the dot).
+
+So, in other words, to build out a Robby Roto package, you would stage the following files:
+
+* resources/cores/mame2003_plus_libretro.so
+* resources/roms/robby.zip
+
+And, if you want a custom box art and a bezel (both are optional), you could also stage these:
+
+* resources/boxart/robby.png
+* resources/bezels/robby.png
+
+Then, it's as simple as typing in the following:
+
+```
+$ ./saucepan.sh "The Adventures of Robby Roto" robby
+```
+
+Et voilà, a wild UCE file appears that's ready to be copied onto a USB stick and
+carried to your local ALU for some gaming goodness.
+
+By default, the script uses the mame2003_plus_libretro.so core, but if you prefer
+to use something different, you can change it by specifying:
+
+```
+--core-name <core_name>
+```
+
+on the command line. Obviously, that core needs to be in your resources/cores
+directory for that to work.
+
+Or, if you'd prefer to use the stock cores that are provided with the Legends Ultimate,
+you can do that too!
+
+Just pass in:
+
+```
+--stock-core genesis|mame2003plus|mame2010|nes|snes|atari2600
+```
+
+This will configure your UCE to use a built-in core so it doesn't have bundle one into
+the file, which means much smaller file sizes.
+
 ## Initial Configuration
 
-### Resource directories
+### Resource Directories
 
-In order for the script to run, four directories need to exist in the resources directory.
+In order for the script to run, four directories must exist in the resources directory.
 They are:
 
 * bezels - Contains 1280x720 bezels in PNG format with the same
@@ -18,16 +72,19 @@ They are:
   to be anything in here.
 * roms - Contains ROM files.
 
-If you already have directories located elsewhere that meet these descriptions,
-you can simply create links to those directories.  For example, if you have an
-existing ROMs directory at "/MAME/roms", you can create a link with the
-following command:
+Before running the script, you will need to create these directories and populate them
+with your box art, bezels, cores, and ROMs.
+
+More likely, you already have directories located elsewhere that meet these
+descriptions. If so, you can simply create links to those directories.  For
+example, if you have an existing ROMs directory at "/MAME/roms", you can create
+a link with the following command:
 
 ```
-$ ln -s /MAME/roms ./roms
+$ ln -s /MAME/roms <saucepan_home>/resources/roms
 ```
 
-### Default box art and bezel
+### Default Box Art and Bezel
 
 When no custom box art is found, the script will use the default box art located at
 defaults/boxart.png. If you want to set your own default, just copy it over the
@@ -62,3 +119,12 @@ saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name
 
 Note that if you don't specify any core on the command line, the script will attempt to
 use resources/cores/mame2003_plus_libretro.so.
+
+## Credit Where Due
+
+This script currently includes a slightly modified version of "build_sq_cartridge_pack.sh",
+which is a part of the [ultimate_addon tool](https://github.com/FalkensMaze1983/ultimate_addon)
+by the estimable [FalkensMaze1983](https://github.com/FalkensMaze1983). One of my first updates
+will be to remove the dependence on that script.
+
+The rest of this was made by [slutzo](https://github.com/slutzo).
