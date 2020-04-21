@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# saucepan.sh - assemble a variety of ingredients into a savory UCE file
+
 usage()
 {
     echo
@@ -24,6 +26,24 @@ usage()
     echo "          resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively."
     echo
 }
+
+cleanup()
+{
+    # If we've left temporary files lying around, ice them
+    if [ ! -z "${game_temp_file}" ] && [ -f "${game_temp_file}" ]
+    then
+        rm ${game_temp_file}
+    fi
+    if [ ! -z "${save_temp_file}" ] && [ -f "${save_temp_file}" ]
+    then
+        rm ${save_temp_file}
+    fi
+    if [ ! -z "${staging_dir}" ] && [ -d "${staging_dir}" ]
+    then
+        rm -r ${staging_dir}
+    fi
+}
+trap cleanup EXIT
 
 # Built-in cores located in /emulator on the ALU file system
 stock_core_genesis=genesis_plus_gx_libretro.so
@@ -158,6 +178,8 @@ else
     rom_name="$2"
 fi
 
+echo "Building \"${game_name}\" from sources named \"${rom_name}\"..."
+
 # Verify a ROM really exists before we get in too deep.
 # We assume there's only one file with the base rom_name in the roms directory.
 # If there's more, there's a chance we'll grab the wrong one.
@@ -170,10 +192,8 @@ else
     exit 1
 fi
 
-# Replace any characters in the game name that are likely to confuse the file system.
+# Replace any characters in the game name that are likely to confuse the file system
 sanitized_game_name=`echo "$1" | sed 's|[ :]|_|g'`
-
-echo "Building \"${game_name}\" from \"${rom_name}\" sources..."
 
 staging_dir=${working_dir}/AddOn_${sanitized_game_name}
 mkdir -p ${staging_dir}/boxart
@@ -185,6 +205,7 @@ mkdir -p ${staging_dir}/save
 src_boxart=${src_dir_boxart}/${rom_name}.png
 if [ -f "${src_boxart}" ]
 then
+    echo "Found custom box art: ${src_boxart}"
     cp -p ${src_boxart} ${staging_dir}/boxart/boxart.png
 else
     echo "Custom box art not found. Using default box art"
@@ -196,6 +217,7 @@ src_bezel=${src_dir_bezels}/${rom_name}.png
 has_bezel=false
 if [ -f "${src_bezel}" ]
 then
+    echo "Found custom bezel: ${src_bezel}"
     cp -p ${src_bezel} ${staging_dir}/boxart/addon.z.png
     has_bezel=true
 elif [ -f "${default_bezel}" ]
@@ -207,26 +229,29 @@ else
     echo "Not using a bezel"
 fi
 
-# Set up our emulator core.
+# Set up our emulator core
 if [ "${use_stock_core}" == "true" ]
 then
+    echo "Building with stock core: ${core_name}"
     # No need to copy anything. The core is already on the ALU.
     core_path=/emulator/${core_name}
 else
+    echo "Building with custom core: ${core_name}"
     cp -p ${src_dir_cores}/${core_name} ${staging_dir}/emu
     core_path=./emu/${core_name}
 fi
 
-# Pull in ROM from the source dir.
+# Pull in ROM from the source dir
 cp -p ${src_rom} ${staging_dir}/roms
 
 # Create a relative link for the title image
-pushd ${staging_dir}
+pushd ${staging_dir} > /dev/null
 ln -sf boxart/boxart.png title
-popd
+popd > /dev/null
 
+# Copy in our XML descriptor and the executable, replacing their
+# contents as appropriate
 cat ${script_dir}/defaults/cartridge.xml | sed "s|GAME_NAME|${game_name}|g" > ${staging_dir}/cartridge.xml
-
 if [ "${has_bezel}" = true ]
 then
     exec_src=${script_dir}/defaults/exec_bezel.sh
@@ -234,10 +259,49 @@ else
     exec_src=${script_dir}/defaults/exec.sh
 fi
 cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_name}.zip|g" > ${staging_dir}/exec.sh
+chmod 755 ${staging_dir}/exec.sh
 
-# The staging area is built.  Now let's cook it up into a UCE.
-uce_file_name=AddOn_${sanitized_game_name}.UCE
-${script_dir}/build_sq_cartridge_pack.sh ${staging_dir} ${target_dir}/${uce_file_name}
+# The staging area is built, so let's cook it up into a UCE
+game_temp_file=${working_dir}/${sanitized_game_name}_game.tmp
+save_temp_file=${working_dir}/${sanitized_game_name}_save.tmp
+mksquashfs ${staging_dir} ${game_temp_file} -comp gzip -b 256K -root-owned -nopad > /dev/null
 
-# And clean up after ourselves
-rm -r ${staging_dir}
+# See if we happened to luck out and get a file size that's an exact multiple of 4K
+chunk_size=4096
+game_temp_file_size=`stat -c%s ${game_temp_file}`
+bytes_after_last_chunk_boundary=$(( ${game_temp_file_size} % ${chunk_size} ))
+if [ ${bytes_after_last_chunk_boundary} -ne 0 ]
+then
+    # Pad out the file with zeroes until we get to an exact multiple of 4K
+    bytes_to_next_chunk_boundary=$(( ${chunk_size} - ${bytes_after_last_chunk_boundary} ))
+    dd if=/dev/zero bs=1 count=${bytes_to_next_chunk_boundary} status=none >> ${game_temp_file}
+fi
+
+# Next up is a 16-byte MD5 checksum of the squashfs file we just made,
+# followed by 32 reserved bytes of empty space
+md5sum ${game_temp_file} \
+    | cut -f1 -d' ' \
+    | xxd -r -p \
+    | dd of=${game_temp_file} ibs=16 count=1 obs=16 oflag=append conv=notrunc status=none
+dd if=/dev/zero of=${game_temp_file} ibs=16 count=2 obs=16 oflag=append conv=notrunc status=none
+
+# Time to create the file that's going to be our 4M save area,
+# and populate it with a couple of required directories
+truncate -s 4M ${save_temp_file}
+mkfs.ext4 ${save_temp_file} >& /dev/null
+debugfs -R 'mkdir upper' -w ${save_temp_file} >& /dev/null
+debugfs -R 'mkdir work' -w ${save_temp_file} >& /dev/null
+
+# Now get an MD5 checksum of our save area file, and tack that on to the game file
+md5sum ${save_temp_file} \
+    | cut -f1 -d' ' \
+    | xxd -r -p \
+    | dd of=${game_temp_file} ibs=16 count=1 obs=16 oflag=append conv=notrunc status=none
+
+# Finally, we tack our save file onto the end of the game file, and we're done
+uce_file=${target_dir}/AddOn_${sanitized_game_name}.UCE
+cat ${game_temp_file} ${save_temp_file} > ${uce_file}
+
+echo "Creation complete! UCE file written to: ${uce_file}"
+
+exit 0

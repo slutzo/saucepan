@@ -1,5 +1,5 @@
 # saucepan
-Create a UCE file by pulling source files from various locations
+Assemble a variety of ingredients into a savory UCE file
 
 ## What It Do
 
@@ -122,9 +122,4 @@ use resources/cores/mame2003_plus_libretro.so.
 
 ## Credit Where Due
 
-This script currently includes a slightly modified version of "build_sq_cartridge_pack.sh",
-which is a part of the [ultimate_addon tool](https://github.com/FalkensMaze1983/ultimate_addon)
-by the estimable [FalkensMaze1983](https://github.com/FalkensMaze1983). One of my first updates
-will be to remove the dependence on that script.
-
-The rest of this was made by [slutzo](https://github.com/slutzo).
+This thing was made by [slutzo](https://github.com/slutzo).
