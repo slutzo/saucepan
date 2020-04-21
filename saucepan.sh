@@ -264,18 +264,7 @@ chmod 755 ${staging_dir}/exec.sh
 # The staging area is built, so let's cook it up into a UCE
 game_temp_file=${working_dir}/${sanitized_game_name}_game.tmp
 save_temp_file=${working_dir}/${sanitized_game_name}_save.tmp
-mksquashfs ${staging_dir} ${game_temp_file} -comp gzip -b 256K -root-owned -nopad > /dev/null
-
-# See if we happened to luck out and get a file size that's an exact multiple of 4K
-chunk_size=4096
-game_temp_file_size=`stat -c%s ${game_temp_file}`
-bytes_after_last_chunk_boundary=$(( ${game_temp_file_size} % ${chunk_size} ))
-if [ ${bytes_after_last_chunk_boundary} -ne 0 ]
-then
-    # Pad out the file with zeroes until we get to an exact multiple of 4K
-    bytes_to_next_chunk_boundary=$(( ${chunk_size} - ${bytes_after_last_chunk_boundary} ))
-    dd if=/dev/zero bs=1 count=${bytes_to_next_chunk_boundary} status=none >> ${game_temp_file}
-fi
+mksquashfs ${staging_dir} ${game_temp_file} -comp gzip -b 256K -root-owned > /dev/null
 
 # Next up is a 16-byte MD5 checksum of the squashfs file we just made,
 # followed by 32 reserved bytes of empty space
