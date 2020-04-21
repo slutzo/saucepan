@@ -1,7 +1,5 @@
 #!/bin/bash
 
-output_filename=outfile
-
 usage ()
 {
     echo
@@ -32,6 +30,7 @@ else
     file_to_extract=$2
 fi
 
+output_filename=`basename ${file_to_extract}`
 debugfs -f <(echo cat ${file_to_extract}) ${fs_image} | tail -n +2 > ${output_filename}
 
 echo "Done. The extracted file has been save to ${output_filename}."
