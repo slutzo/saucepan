@@ -39,6 +39,12 @@ default_core_name=mame2003_plus_libretro.so
 # Where the script lives
 script_dir=`dirname $0`
 
+# Where all the temporary junk lives
+working_dir=/tmp
+
+# Where the UCE file gets put
+target_dir=${script_dir}/target
+
 # Location of the various files that will be pulled in to create a UCE
 src_dir_bezels="${script_dir}/resources/bezels"
 src_dir_boxart="${script_dir}/resources/boxart"
@@ -169,7 +175,7 @@ sanitized_game_name=`echo "$1" | sed 's|[ :]|_|g'`
 
 echo "Building \"${game_name}\" from \"${rom_name}\" sources..."
 
-staging_dir=${script_dir}/AddOn_${sanitized_game_name}
+staging_dir=${working_dir}/AddOn_${sanitized_game_name}
 mkdir -p ${staging_dir}/boxart
 mkdir -p ${staging_dir}/emu
 mkdir -p ${staging_dir}/roms
@@ -214,7 +220,10 @@ fi
 # Pull in ROM from the source dir.
 cp -p ${src_rom} ${staging_dir}/roms
 
-ln -sf ${staging_dir}/boxart/boxart.png ${staging_dir}/title
+# Create a relative link for the title image
+pushd ${staging_dir}
+ln -sf boxart/boxart.png title
+popd
 
 cat ${script_dir}/defaults/cartridge.xml | sed "s|GAME_NAME|${game_name}|g" > ${staging_dir}/cartridge.xml
 
@@ -224,11 +233,11 @@ then
 else
     exec_src=${script_dir}/defaults/exec.sh
 fi
-
 cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_name}.zip|g" > ${staging_dir}/exec.sh
 
-# The staging area is built.  Now let's squash it!
-${script_dir}/build_sq_cartridge_pack.sh ${staging_dir} ${script_dir}/AddOn_${sanitized_game_name}.UCE
+# The staging area is built.  Now let's cook it up into a UCE.
+uce_file_name=AddOn_${sanitized_game_name}.UCE
+${script_dir}/build_sq_cartridge_pack.sh ${staging_dir} ${target_dir}/${uce_file_name}
 
 # And clean up after ourselves
 rm -r ${staging_dir}
