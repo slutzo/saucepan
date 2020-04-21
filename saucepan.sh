@@ -258,7 +258,8 @@ then
 else
     exec_src=${script_dir}/defaults/exec.sh
 fi
-cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_name}.zip|g" > ${staging_dir}/exec.sh
+rom_file_name=`basename ${src_rom}`
+cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_file_name}|g" > ${staging_dir}/exec.sh
 chmod 755 ${staging_dir}/exec.sh
 
 # The staging area is built, so let's cook it up into a UCE
