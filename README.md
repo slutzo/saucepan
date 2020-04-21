@@ -30,7 +30,7 @@ Then, it's as simple as typing in the following:
 $ ./saucepan.sh "The Adventures of Robby Roto" robby
 ```
 
-Et voilà, a wild UCE file appears that's ready to be copied onto a USB stick and
+Et voilà, a wild UCE file appears in the target directory that's ready to be copied onto a USB stick and
 carried to your local ALU for some gaming goodness.
 
 By default, the script uses the mame2003_plus_libretro.so core, but if you prefer
