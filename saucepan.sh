@@ -246,7 +246,7 @@ cp -p ${src_rom} ${staging_dir}/roms
 
 # Create a relative link for the title image
 pushd ${staging_dir} > /dev/null
-ln -sf boxart/boxart.png title
+ln -sf boxart/boxart.png title.png
 popd > /dev/null
 
 # Copy in our XML descriptor and the executable, replacing their
