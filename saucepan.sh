@@ -77,6 +77,7 @@ default_bezel="${script_dir}/defaults/bezel.png"
 
 core_name=""
 use_stock_core=false
+alt_defaults=false
 
 # Parse out command-line options
 positional_args=""
@@ -130,6 +131,10 @@ do
                 use_stock_core=true
                 shift 2
             fi
+            ;;
+        --alt-defaults)
+            alt_defaults=true
+            shift
             ;;
         -*|--*) # unrecognized arguments
             echo "ERROR: Unrecognized argument $1"
@@ -275,12 +280,19 @@ md5sum ${game_temp_file} \
     | dd of=${game_temp_file} ibs=16 count=1 obs=16 oflag=append conv=notrunc status=none
 dd if=/dev/zero of=${game_temp_file} ibs=16 count=2 obs=16 oflag=append conv=notrunc status=none
 
-# Time to create the file that's going to be our 4M save area,
-# and populate it with a couple of required directories
-truncate -s 4M ${save_temp_file}
-mkfs.ext4 ${save_temp_file} >& /dev/null
-debugfs -R 'mkdir upper' -w ${save_temp_file} >& /dev/null
-debugfs -R 'mkdir work' -w ${save_temp_file} >& /dev/null
+# Time to set up the file that's going to be our 4M save area
+if [ "${alt_defaults}" == "false" ]
+then
+    # Create a new ext4 file system and populate it with a couple
+    # of required directories
+    truncate -s 4M ${save_temp_file}
+    mkfs.ext4 ${save_temp_file} >& /dev/null
+    debugfs -R 'mkdir upper' -w ${save_temp_file} >& /dev/null
+    debugfs -R 'mkdir work' -w ${save_temp_file} >& /dev/null
+else
+    # Use a pre-built save area that contains alternate default settings
+    gunzip -c ${script_dir}/defaults/alt.sav.gz > ${save_temp_file}
+fi
 
 # Now get an MD5 checksum of our save area file, and tack that on to the game file
 md5sum ${save_temp_file} \
