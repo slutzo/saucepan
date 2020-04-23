@@ -52,7 +52,7 @@ Just pass in:
 --stock-core genesis|mame2003plus|mame2010|nes|snes|atari2600
 ```
 
-This will configure your UCE to use a built-in core so it doesn't have bundle one into
+This will configure your UCE to use a built-in core so it doesn't have to bundle one into
 the file, which means much smaller file sizes.
 
 ## Initial Configuration
@@ -62,11 +62,10 @@ the file, which means much smaller file sizes.
 In order for the script to run, four directories must exist in the resources directory.
 They are:
 
-* bezels - Contains 1280x720 bezels in PNG format with the same
-  names as the associated ROMs.
-* boxart - Contains box art in PNG format with the same names
-  as the associated ROMs. The art can be any size, but 222x306 is recommended
-  in order to keep UCE file size small.
+* bezels - Contains bezel image files named after the associated ROMs. A bezel can be any format
+  or size. When building the UCE, saucepan will automatically convert it to a 1280x720 PNG.
+* boxart - Contains box art image files named after the associated ROMs. A box art can be any
+  format or size. When building the UCE, saucepan will automatically convert it to a 222x306 PNG.
 * cores - Contains custom cores to be packaged into the UCE file. If you want
   to use the stock cores included with the Legends Ultimate, there doesn't need
   to be anything in here.
@@ -83,6 +82,17 @@ a link with the following command:
 ```
 $ ln -s /MAME/roms <saucepan_home>/resources/roms
 ```
+
+NOTE: In order to work with a variety of image and ROM file formats, saucepan has no expectations about
+the file extensions of your ROMs, box arts, and bezels.
+
+For example, if you're building a UCE for Robby Roto, the script doesn't care if your box art is named
+"robby.jpg" or "robby.png", it will just search for "robby.\*" in your resources directory and work with
+what it finds.
+
+However, that means that if you have *both* a "robby.png" and a "robby.jpg" in the same directory, all bets
+are off as to which one saucepan will use. It's therefore best to have only one file with the same rom name
+in each resource directory.
 
 ### Default Box Art and Bezel
 
@@ -106,6 +116,9 @@ saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name
       Use a built-in ALU core. This will make your UCE file substantially smaller.
       <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, or atari2600.
 
+  --no-resize
+      Keep bezel and box art images at their original sizes.
+
   <game_name>
       Specifies the name you want to appear on the ALU Add-On menu.
       Be sure to put the name in quotation marks if it has spaces in it.
@@ -119,6 +132,38 @@ saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name
 
 Note that if you don't specify any core on the command line, the script will attempt to
 use resources/cores/mame2003_plus_libretro.so.
+
+### Automatic Image Resizing
+
+Box art images can technically be any size.  However, it is recommended that they be 222x306 in
+order to keep file sizes small, since images larger than that will be scaled down by the ALU anyway.
+
+Bezel images *must* be sized at 1280x720 or the ALU will refuse to display them.
+
+Both types of image must be in PNG format.
+
+If you have ImageMagick installed on your system, saucepan will automatically resize your box art
+and bezel images to the correct sizes. It will also convert them to PNG format if they are in some
+other format.
+
+If ImageMagick is not installed, saucepan will warn you that it can not resize images, and will
+use your images at their original sizes.
+
+To determine whether you have ImageMagick installed, run the "convert" command. If it responds with
+usage information, you're good to go! If it gives you an error, or suggests that you should install
+ImageMagick, you'll need to install it before resizing will work.
+
+To install ImageMagick in Ubuntu, you simply run:
+
+```
+$ sudo apt install imagemagick-6.q16
+```
+
+Other distributions may require a different command to install the ImageMagick package.  Also note that you will
+need to be able to run sudo, or become root by some other means, to install the package.
+
+If you prefer that saucepan not try to resize your images, you can specify "--no-resize" on the command line.
+This will also suppress the warning messages about not having ImageMagick installed.
 
 ## Credit Where Due
 

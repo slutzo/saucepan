@@ -6,7 +6,7 @@ usage()
 {
     echo
     echo "USAGE:"
-    echo "`basename $0` [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name>"
+    echo "`basename $0` [--core <core_name>|--stock-core <stock_core>] [--no-resize] <game_name> <rom_name>"
     echo
     echo "  --core <core_name>"
     echo "      Use the custom core named <core_name> located in your resources/cores directory."
@@ -14,6 +14,9 @@ usage()
     echo "  --stock-core <stock_core>"
     echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
     echo "      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, or atari2600."
+    echo
+    echo "  --no-resize"
+    echo "      Keep bezel and box art images at their original sizes."
     echo
     echo "  <game_name>"
     echo "      Specifies the name you want to appear on the ALU Add-On menu."
@@ -75,8 +78,14 @@ src_dir_roms="${script_dir}/resources/roms"
 default_boxart="${script_dir}/defaults/boxart.png"
 default_bezel="${script_dir}/defaults/bezel.png"
 
+# Recommended dimensions for images
+bezel_size=1280x720
+boxart_size=222x306
+
+# Defaults if no command-line arguments
 core_name=""
 use_stock_core=false
+resize_images=true
 alt_defaults=false
 
 # Parse out command-line options
@@ -132,6 +141,11 @@ do
                 shift 2
             fi
             ;;
+        --no-resize)
+            echo "Images will not be resized"
+            resize_images=false
+            shift
+            ;;
         --alt-defaults)
             alt_defaults=true
             shift
@@ -183,13 +197,22 @@ else
     rom_name="$2"
 fi
 
+command -v convert > /dev/null
+if [ $? -ne 0 ] && [ "${resize_images}" == true ]
+then
+    echo "WARNING: Images can not be resized, so their original sizes will be maintained."
+    echo "         Auto-resizing requires the \"convert\" command to be in your path."
+    echo "         You may need to modify your PATH variable or install ImageMagick."
+    resize_images=false
+fi
+
 echo "Building \"${game_name}\" from sources named \"${rom_name}\"..."
 
 # Verify a ROM really exists before we get in too deep.
 # We assume there's only one file with the base rom_name in the roms directory.
 # If there's more, there's a chance we'll grab the wrong one.
-src_rom=`find ${src_dir_roms}/ -type f -name "${rom_name}.*" | head -1`
-if [ -f "${src_rom}" ]
+src_rom=`find ${src_dir_roms}/ -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+if [ "${src_rom}" != "" ]
 then
     echo "Found ROM file: ${src_rom}"
 else
@@ -207,31 +230,48 @@ mkdir -p ${staging_dir}/roms
 mkdir -p ${staging_dir}/save
 
 # Pull in box art from the source dir. If none exists, use the default.
-src_boxart=${src_dir_boxart}/${rom_name}.png
-if [ -f "${src_boxart}" ]
+# We assume there's only one file with the base rom_name in the boxart directory.
+# If there's more, there's a chance we'll grab the wrong one.
+src_boxart=`find ${src_dir_boxart}/ -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+dest_boxart=${staging_dir}/boxart/boxart.png
+if [ "${src_boxart}" != "" ]
 then
     echo "Found custom box art: ${src_boxart}"
-    cp -p ${src_boxart} ${staging_dir}/boxart/boxart.png
 else
     echo "Custom box art not found. Using default box art"
-    cp -p ${default_boxart} ${staging_dir}/boxart/boxart.png
+	src_boxart=${default_boxart}
+fi
+if [ "${resize_images}" == "true" ]
+then
+	convert -resize ${boxart_size} ${src_boxart} ${dest_boxart}
+else
+    cp -p ${src_boxart} ${dest_boxart}
 fi
 
-# Pull in bezel from the source dir. If none exists, assume no bezel.
-src_bezel=${src_dir_bezels}/${rom_name}.png
-has_bezel=false
-if [ -f "${src_bezel}" ]
+# Pull in bezel from the source dir. If none exists, use the default.
+# If no default exists, assume no bezel.
+# We assume there's only one file with the base rom_name in the bezel directory.
+# If there's more, there's a chance we'll grab the wrong one.
+src_bezel=`find ${src_dir_bezels}/ -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+dest_bezel=${staging_dir}/boxart/addon.z.png
+if [ "${src_bezel}" != "" ]
 then
     echo "Found custom bezel: ${src_bezel}"
-    cp -p ${src_bezel} ${staging_dir}/boxart/addon.z.png
-    has_bezel=true
 elif [ -f "${default_bezel}" ]
 then
     echo "Custom bezel not found. Using default bezel."
-    cp -p ${default_bezel} ${staging_dir}/boxart/addon.z.png
-    has_bezel=true
+    src_bezel=${default_bezel}
 else
     echo "Not using a bezel"
+fi
+if [ "${src_bezel}" != "" ]
+then
+    if [ "${resize_images}" == "true" ]
+    then
+	    convert -resize ${bezel_size} ${src_bezel} ${dest_bezel}
+    else
+        cp -p ${src_bezel} ${dest_bezel}
+    fi
 fi
 
 # Set up our emulator core
@@ -257,7 +297,7 @@ popd > /dev/null
 # Copy in our XML descriptor and the executable, replacing their
 # contents as appropriate
 cat ${script_dir}/defaults/cartridge.xml | sed "s|GAME_NAME|${game_name}|g" > ${staging_dir}/cartridge.xml
-if [ "${has_bezel}" = true ]
+if [ "${src_bezel}" != "" ]
 then
     exec_src=${script_dir}/defaults/exec_bezel.sh
 else
