@@ -49,7 +49,7 @@ you can do that too!
 Just pass in:
 
 ```
---stock-core genesis|mame2003plus|mame2010|nes|snes|atari2600
+--stock-core genesis|mame2003plus|mame2010|nes|snes|atari2600|colecovision
 ```
 
 This will configure your UCE to use a built-in core so it doesn't have to bundle one into
@@ -114,7 +114,8 @@ saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name
 
   --stock-core <stock_core>
       Use a built-in ALU core. This will make your UCE file substantially smaller.
-      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, or atari2600.
+      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
+      or colecovision.
 
   --no-resize
       Keep bezel and box art images at their original sizes.

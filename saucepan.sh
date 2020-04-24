@@ -13,7 +13,8 @@ usage()
     echo
     echo "  --stock-core <stock_core>"
     echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
-    echo "      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, or atari2600."
+    echo "      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,"
+    echo "      or colecovision."
     echo
     echo "  --no-resize"
     echo "      Keep bezel and box art images at their original sizes."
@@ -55,6 +56,7 @@ stock_core_mame2010=mame2010_libretro.so
 stock_core_nes=quicknes_libretro.so
 stock_core_snes=snes_mtfaust-arm64-cortex-a53.so
 stock_core_atari2600=stella_libretro.so
+stock_core_colecovision=libcv.so
 
 # The core to use if none are specified on the command line
 default_core_name=mame2003_plus_libretro.so
@@ -131,6 +133,9 @@ do
                         ;;
                     atari2600)
                         core_name="${stock_core_atari2600}"
+                        ;;
+                    colecovision)
+                        core_name="${stock_core_colecovision}"
                         ;;
                     *)
                         echo "ERROR: There is no stock core associated with the name \"$2\""
