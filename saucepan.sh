@@ -243,9 +243,9 @@ else
 fi
 if [ "${resize_images}" == "true" ]
 then
-	convert -resize ${boxart_size} ${src_boxart} ${dest_boxart}
+	convert -resize ${boxart_size} "${src_boxart}" "${dest_boxart}"
 else
-    cp -p ${src_boxart} ${dest_boxart}
+    cp -p "${src_boxart}" "${dest_boxart}"
 fi
 
 # Pull in bezel from the source dir. If none exists, use the default.
@@ -268,9 +268,9 @@ if [ "${src_bezel}" != "" ]
 then
     if [ "${resize_images}" == "true" ]
     then
-	    convert -resize ${bezel_size} ${src_bezel} ${dest_bezel}
+	    convert -resize ${bezel_size} "${src_bezel}" "${dest_bezel}"
     else
-        cp -p ${src_bezel} ${dest_bezel}
+        cp -p "${src_bezel}" "${dest_bezel}"
     fi
 fi
 
@@ -287,7 +287,7 @@ else
 fi
 
 # Pull in ROM from the source dir
-cp -p ${src_rom} ${staging_dir}/roms
+cp -p "${src_rom}" ${staging_dir}/roms
 
 # Create a relative link for the title image
 pushd ${staging_dir} > /dev/null
@@ -303,7 +303,7 @@ then
 else
     exec_src=${script_dir}/defaults/exec.sh
 fi
-rom_file_name=`basename ${src_rom}`
+rom_file_name=`basename "${src_rom}"`
 cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_file_name}|g" > ${staging_dir}/exec.sh
 chmod 755 ${staging_dir}/exec.sh
 
