@@ -32,6 +32,9 @@ usage()
     echo "  -o|--organize"
     echo "      Organize UCE files by genre and/or console"
     echo
+    echo "  -u|--uncompress"
+    echo "      Uncompress the ROM file. Currently only works on files in .zip format."
+    echo
 }
 
 cleanup()
@@ -94,6 +97,7 @@ use_stock_core=false
 resize_images=true
 alt_defaults=false
 organize_targest=false
+uncompress_rom=false
 
 # Parse out command-line options
 positional_args=""
@@ -159,6 +163,10 @@ do
             ;;
         -o|--organize)
             organize_targets=true
+            shift
+            ;;
+        -u|--uncompress)
+            uncompress_rom=true
             shift
             ;;
         -a|--alt-defaults)
@@ -330,8 +338,20 @@ else
     core_path=./emu/${core_name}
 fi
 
-# Pull in ROM from the source dir
-cp -p "${src_rom}" "${staging_dir}/roms"
+# Pull in ROM from the source dir, uncompressing it if requested
+if [ "${uncompress_rom}" == "true" ]
+then
+    rom_ext=`basename "${src_rom}" | cut -f2 -d.`
+    if [ "${rom_ext}" != "zip" ]
+    then
+        echo "WARNING: Can't compress a ROM that isn't a zip file. Leaving it as-is."
+        cp -p "${src_rom}" "${staging_dir}/roms"
+    else
+        unzip -o "${src_rom}" -d "${staging_dir}/roms"
+    fi
+else
+    cp -p "${src_rom}" "${staging_dir}/roms"
+fi
 
 # Create a relative link for the title image
 pushd "${staging_dir}" > /dev/null
@@ -347,14 +367,17 @@ then
 else
     exec_src=${script_dir}/defaults/exec.sh
 fi
-rom_file_name=`basename "${src_rom}"`
+# We have to look up the file in the staging dir, because the extension may have
+# changed if it was uncompressed.
+rom_file_path=`find "${staging_dir}/roms/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+rom_file_name=`basename "${rom_file_path}"`
 cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_file_name}|g" > ${staging_dir}/exec.sh
 chmod 755 "${staging_dir}/exec.sh"
 
 # The staging area is built, so let's cook it up into a UCE
 game_temp_file=${working_dir}/${sanitized_game_name}_game.tmp
 save_temp_file=${working_dir}/${sanitized_game_name}_save.tmp
-mksquashfs "${staging_dir}" "${game_temp_file}" -comp gzip -b 256K -root-owned > /dev/null
+mksquashfs "${staging_dir}" "${game_temp_file}" -comp gzip -b 256K -root-owned -noappend > /dev/null
 
 # Next up is a 16-byte MD5 checksum of the squashfs file we just made,
 # followed by 32 reserved bytes of empty space

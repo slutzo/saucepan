@@ -133,6 +133,9 @@ Arguments:
 
   -o|--organize
       Organize UCE files by genre and/or console
+
+  -u|--uncompress
+      Uncompress the ROM file. Currently only works on files in .zip format.
 ```
 
 Note that if you don't specify any core on the command line, the script will attempt to
