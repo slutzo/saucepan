@@ -107,18 +107,7 @@ Feel free to add your own, or leave it missing if you prefer no bezel.
 ## Usage
 
 ```
-saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name>
-
-  --core <core_name>
-      Use the custom core named <core_name> located in your resources/cores directory.
-
-  --stock-core <stock_core>
-      Use a built-in ALU core. This will make your UCE file substantially smaller.
-      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
-      or colecovision.
-
-  --no-resize
-      Keep bezel and box art images at their original sizes.
+Usage: saucepan.sh [arguments]... <game_name> <rom_name>
 
   <game_name>
       Specifies the name you want to appear on the ALU Add-On menu.
@@ -129,6 +118,21 @@ saucepan.sh [--core <core_name>|--stock-core <stock_core>] <game_name> <rom_name
       Note that you should not include the file extension.
       If you have a custom box art and/or bezel, they should be located at
           resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively.
+
+Arguments:
+  -c|--core <core_name>
+      Use the custom core named <core_name> located in your resources/cores directory.
+
+  -s|--stock-core <stock_core>
+      Use a built-in ALU core. This will make your UCE file substantially smaller.
+      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
+      or colecovision.
+
+  -n|--no-resize
+      Keep bezel and box art images at their original sizes.
+
+  -o|--organize
+      Organize UCE files by genre and/or console
 ```
 
 Note that if you don't specify any core on the command line, the script will attempt to
@@ -165,6 +169,25 @@ need to be able to run sudo, or become root by some other means, to install the 
 
 If you prefer that saucepan not try to resize your images, you can specify "--no-resize" on the command line.
 This will also suppress the warning messages about not having ImageMagick installed.
+
+### Automatic UCE Organization
+
+saucepan can automatically organize your UCEs when it writes them out to the target
+directory.
+
+If you specify the "--organize" flag, the script will write your MAME UCE into a subdirectory named
+after the game's genre, as defined in the catver.ini for that version of MAME.
+
+For example, if you build a Robby Roto UCE using a MAME 2003-Plus core, it will be written to:
+
+<saucepan_home>/target/Maze/Digging/robby.zip
+
+Of course, the ALU only reads the first subdirectory name when scanning a USB stick for Add-Ons,
+so the game will show up under "Maze". Perhaps AtGames will someday enhance the firmware to
+allow multi-level navigation, but for now, it's better than nothing.
+
+If you're using a non-MAME core, the UCE will be written to a directory named after the target platform
+(e.g., Atari 2600, Genesis, etc.)
 
 ## Credit Where Due
 
