@@ -273,7 +273,7 @@ else
 fi
 
 # Replace any characters in the game name that are likely to confuse the file system
-sanitized_game_name=`echo "$1" | sed 's|[ :]|_|g'`
+sanitized_game_name=`echo "$1" | sed "s|[ :']|_|g"`
 
 staging_dir=${working_dir}/AddOn_${sanitized_game_name}
 mkdir -p "${staging_dir}/boxart"
