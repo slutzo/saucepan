@@ -104,6 +104,40 @@ When no custom bezel is found, the script will use the default bezel located at
 defaults/bezel.png. Since not everybody loves bezels, there is no default provided.
 Feel free to add your own, or leave it missing if you prefer no bezel.
 
+### Per-platform Resource Directories
+
+Instead of having a single generic directory for your roms, bezels, and boxart, you can create separate
+directories for each different target platform. For example, if you want to put all of your MAME2010 
+resources in their own location, you can create any of the following three directories:
+
+resources/bezels_mame2010
+resources/boxart_mame2010
+resources/roms_mame2010
+
+If saucepan detects that you are trying to create a MAME2010 UCE, it will first look for resources in
+these directories (if they exist). If it doesn't find what it's looking for in the platform-specific
+directories, it will fall back to the generic directory for each type of resource.
+
+An example of how you might use this feature is to create separate roms_mame2003plus and roms_mame2010
+directories. Depending on which core you select, saucepan will automatically pull the ROM from the correct
+directory.
+
+Note that you can create a platform-specific default boxart and bezel by placing "boxart.png" and
+"bezel.png" in their respective platform-specific directories. These will override any custom boxart and bezel
+that might exist in the generic resource directories, as well as the overall defaults.
+
+Valid platform names are:
+
+* atari2600
+* colecovision
+* gba
+* genesis
+* mame2003plus
+* mame2010
+* nes
+* snes
+* supergrafx
+
 ## Usage
 
 ```

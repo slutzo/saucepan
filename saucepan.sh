@@ -83,8 +83,11 @@ src_dir_cores="${script_dir}/resources/cores"
 src_dir_roms="${script_dir}/resources/roms"
 
 # Default box art and bezel files
-default_boxart="${script_dir}/defaults/boxart.png"
-default_bezel="${script_dir}/defaults/bezel.png"
+defaults_dir="${script_dir}/defaults"
+default_boxart_name="boxart.png"
+default_boxart="${defaults_dir}/${default_boxart_name}"
+default_bezel_name="bezel.png"
+default_bezel="${defaults_dir}/${default_bezel_name}"
 
 # Recommended dimensions for images
 bezel_size=1280x720
@@ -263,7 +266,21 @@ echo "Building \"${game_name}\" from sources named \"${rom_name}\"..."
 # Verify a ROM really exists before we get in too deep.
 # We assume there's only one file with the base rom_name in the roms directory.
 # If there's more, there's a chance we'll grab the wrong one.
-src_rom=`find "${src_dir_roms}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+src_rom=""
+if [ "${target_platform}" != "" ]
+then
+    platform_roms_dir="${src_dir_roms}_${target_platform}"
+    # First see if it's in a platform-specific directory
+    if [ -d "${platform_roms_dir}" ]
+    then
+        src_rom=`find "${platform_roms_dir}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+    fi
+fi
+if [ "${src_rom}" == "" ]
+then
+    # Check for it in the generic directory
+    src_rom=`find "${src_dir_roms}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+fi
 if [ "${src_rom}" != "" ]
 then
     echo "Found ROM file: ${src_rom}"
@@ -284,8 +301,27 @@ mkdir -p "${staging_dir}/save"
 # Pull in box art from the source dir. If none exists, use the default.
 # We assume there's only one file with the base rom_name in the boxart directory.
 # If there's more, there's a chance we'll grab the wrong one.
-src_boxart=`find "${src_dir_boxart}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
-dest_boxart=${staging_dir}/boxart/boxart.png
+src_boxart=""
+if [ "${target_platform}" != "" ]
+then
+    # First see if it's in a platform-specific directory.
+    platform_boxart_dir="${src_dir_boxart}_${target_platform}"
+    if [ -d "${platform_boxart_dir}" ]
+    then
+        src_boxart=`find "${platform_boxart_dir}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+        # Check for a platform-specific default
+        default_platform_boxart="${platform_boxart_dir}/${default_boxart_name}"
+        if [ "${src_boxart}" == "" ] && [ -f "${default_platform_boxart}" ]
+        then
+            src_boxart="${default_platform_boxart}"
+        fi
+    fi
+fi
+if [ "${src_boxart}" == "" ]
+then
+    # Check for it in the generic directory
+    src_boxart=`find "${src_dir_boxart}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+fi
 if [ "${src_boxart}" != "" ]
 then
     echo "Found custom box art: ${src_boxart}"
@@ -293,6 +329,7 @@ else
     echo "Custom box art not found. Using default box art"
 	src_boxart=${default_boxart}
 fi
+dest_boxart=${staging_dir}/boxart/boxart.png
 if [ "${resize_images}" == "true" ]
 then
 	convert -resize ${boxart_size} "${src_boxart}" "${dest_boxart}"
@@ -304,8 +341,27 @@ fi
 # If no default exists, assume no bezel.
 # We assume there's only one file with the base rom_name in the bezel directory.
 # If there's more, there's a chance we'll grab the wrong one.
-src_bezel=`find "${src_dir_bezels}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
-dest_bezel=${staging_dir}/boxart/addon.z.png
+src_bezel=""
+if [ "${target_platform}" != "" ]
+then
+    # First see if it's in a platform-specific directory
+    platform_bezels_dir="${src_dir_bezels}_${target_platform}"
+    if [ -d "${platform_bezels_dir}" ]
+    then
+        src_bezel=`find "${platform_bezels_dir}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+        # Check for a platform-specific default
+        default_platform_bezel="${platform_bezels_dir}/${default_bezel_name}"
+        if [ "${src_bezel}" == "" ] && [ -f "${default_platform_bezel}" ]
+        then
+            src_bezel="${default_platform_bezel}"
+        fi
+    fi
+fi
+if [ "${src_bezel}" == "" ]
+then
+    # Check for it in the generic directory
+    src_bezel=`find "${src_dir_bezels}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+fi
 if [ "${src_bezel}" != "" ]
 then
     echo "Found custom bezel: ${src_bezel}"
@@ -316,6 +372,7 @@ then
 else
     echo "Not using a bezel"
 fi
+dest_bezel=${staging_dir}/boxart/addon.z.png
 if [ "${src_bezel}" != "" ]
 then
     if [ "${resize_images}" == "true" ]
@@ -347,7 +404,7 @@ then
         echo "WARNING: Can't compress a ROM that isn't a zip file. Leaving it as-is."
         cp -p "${src_rom}" "${staging_dir}/roms"
     else
-        unzip -o "${src_rom}" -d "${staging_dir}/roms"
+        unzip -o "${src_rom}" -d "${staging_dir}/roms" >& /dev/null
     fi
 else
     cp -p "${src_rom}" "${staging_dir}/roms"
@@ -360,12 +417,12 @@ popd > /dev/null
 
 # Copy in our XML descriptor and the executable, replacing their
 # contents as appropriate
-cat "${script_dir}/defaults/cartridge.xml" | sed "s|GAME_NAME|${game_name}|g" > "${staging_dir}/cartridge.xml"
+cat "${defaults_dir}/cartridge.xml" | sed "s|GAME_NAME|${game_name}|g" > "${staging_dir}/cartridge.xml"
 if [ "${src_bezel}" != "" ]
 then
-    exec_src=${script_dir}/defaults/exec_bezel.sh
+    exec_src=${defaults_dir}/exec_bezel.sh
 else
-    exec_src=${script_dir}/defaults/exec.sh
+    exec_src=${defaults_dir}/exec.sh
 fi
 # We have to look up the file in the staging dir, because the extension may have
 # changed if it was uncompressed.
@@ -398,7 +455,7 @@ then
     debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
 else
     # Use a pre-built save area that contains alternate default settings
-    gunzip -c ${script_dir}/defaults/alt.sav.gz > "${save_temp_file}"
+    gunzip -c ${defaults_dir}/alt.sav.gz > "${save_temp_file}"
 fi
 
 # Now get an MD5 checksum of our save area file, and tack that on to the game file
@@ -413,7 +470,7 @@ then
     case "${target_platform}"
     in
         mame2003plus|mame2010)
-            game_category=`grep ^${rom_name}= ${script_dir}/defaults/${target_platform}/catver.ini \
+            game_category=`grep ^${rom_name}= ${defaults_dir}/${target_platform}/catver.ini \
                 | head -1 \
                 | cut -f2 -d= \
                 | sed 's| \/|\/|g' \
