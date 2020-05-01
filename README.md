@@ -104,15 +104,15 @@ When no custom bezel is found, the script will use the default bezel located at
 defaults/bezel.png. Since not everybody loves bezels, there is no default provided.
 Feel free to add your own, or leave it missing if you prefer no bezel.
 
-### Per-platform Resource Directories
+### Per-Platform Resource Directories
 
 Instead of having a single generic directory for your roms, bezels, and boxart, you can create separate
 directories for each different target platform. For example, if you want to put all of your MAME2010 
 resources in their own location, you can create any of the following three directories:
 
-resources/bezels_mame2010
-resources/boxart_mame2010
-resources/roms_mame2010
+* resources/bezels_mame2010
+* resources/boxart_mame2010
+* resources/roms_mame2010
 
 If saucepan detects that you are trying to create a MAME2010 UCE, it will first look for resources in
 these directories (if they exist). If it doesn't find what it's looking for in the platform-specific
