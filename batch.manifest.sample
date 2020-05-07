@@ -1,0 +1,58 @@
+# Manifest file for saucepan batch cooker
+
+# Blank lines are ignored, as are comment lines like this one,
+# which begin with a "#".
+
+# Each section begins with a line surrounded by brackets which indicates
+# the core to use for the games in that section, as well as the flags
+# that will be used by default when building that section's UCE's.
+#
+# The core line is followed by a list of games, each containing the name
+# of the game, the base filename of the ROM file, and the flags to use
+# for that game if you want to override the core defaults.
+# 
+# All fields are separated by the "pipe" symbol (|).
+#
+# FORMAT:
+# [<core_name>|<core_default_parameters>]
+# Game Name 1|ROM File Base Name 1|Override Flags 1
+# Game Name 2|ROM File Base Name 2|Override Flags 2
+# ...
+
+# The games in this section will use the custom core
+# "mame2003_plus_libretro.so", which should be in your
+# resources/cores directory.
+# 
+# We specify that all games in this section will be built with
+# the "-o" flag to automatically organize UCEs, unless a game
+# specifies flags of its own. For example, the game Victory
+# below, will use "-n" instead of "-o" to build its UCE.
+[mame2003_plus_libretro.so|-o]
+The Adventures of Robby Roto|robby|
+Victory|victory|-n
+
+# These games will use the stock MAME2003-Plus core that
+# is built in to the ALU. As a result, the UCE size will be
+# substantially smaller.
+#
+# We can specify that no flags should be used for a game
+# by using "--" for its flags. So the game Star Fire below will
+# not use the default "-o" flag.
+[stock_mame2003plus|-o]
+Looping|looping|
+Star Fire|starfire|--
+
+# You can have as many sections that use the same core as you like.
+# Here we repeat the stock MAME2003-Plus core, but for this section,
+# we won't pass any flags to saucepan by default.
+[stock_mame2003plus|--]
+Fire One|fireone|
+
+# These games will use the stock Sega Genesis core that
+# is built in to the ALU.
+#
+# We use "-u" in our default flags here because our game files
+# are zipped, but the stock Genesis core can't read zip files.
+[stock_genesis|-o -u]
+The Lion King|Lion King, The (World)|
+

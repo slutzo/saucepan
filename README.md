@@ -226,6 +226,114 @@ allow multi-level navigation, but for now, it's better than nothing.
 If you're using a non-MAME core, the UCE will be written to a directory named after the target platform
 (e.g., Atari 2600, Genesis, etc.)
 
+## Batch Processing
+
+saucepan supports building several UCE files at once through the use of a manifest file and the
+cook_batch script.
+
+To specify a list of games to build, create a file called "batch.manifest" in <saucepan_home>.
+The file batch.manifest.sample describes the correct format for the manifest, and is shown here:
+
+```
+# Manifest file for saucepan batch cooker
+
+# Blank lines are ignored, as are comment lines like this one,
+# which begin with a "#".
+
+# Each section begins with a line surrounded by brackets which indicates
+# the core to use for the games in that section, as well as the flags
+# that will be used by default when building that section's UCE's.
+#
+# The core line is followed by a list of games, each containing the name
+# of the game, the base filename of the ROM file, and the flags to use
+# for that game if you want to override the core defaults.
+# 
+# All fields are separated by the "pipe" symbol (|).
+#
+# FORMAT:
+# [<core_name>|<core_default_parameters>]
+# Game Name 1|ROM File Base Name 1|Override Flags 1
+# Game Name 2|ROM File Base Name 2|Override Flags 2
+# ...
+
+# The games in this section will use the custom core
+# "mame2003_plus_libretro.so", which should be in your
+# resources/cores directory.
+# 
+# We specify that all games in this section will be built with
+# the "-o" flag to automatically organize UCEs, unless a game
+# specifies flags of its own. For example, the game Victory
+# below, will use "-n" instead of "-o" to build its UCE.
+[mame2003_plus_libretro.so|-o]
+The Adventures of Robby Roto|robby|
+Victory|victory|-n
+
+# These games will use the stock MAME2003-Plus core that
+# is built in to the ALU. As a result, the UCE size will be
+# substantially smaller.
+#
+# We can specify that no flags should be used for a game
+# by using "--" for its flags. So the game Star Fire below will
+# not use the default "-o" flag.
+[stock_mame2003plus|-o]
+Looping|looping|
+Star Fire|starfire|--
+
+# You can have as many sections that use the same core as you like.
+# Here we repeat the stock MAME2003-Plus core, but for this section,
+# we won't pass any flags to saucepan by default.
+[stock_mame2003plus|--]
+Fire One|fireone|
+
+# These games will use the stock Sega Genesis core that
+# is built in to the ALU.
+#
+# We use "-u" in our default flags here because our game files
+# are zipped, but the stock Genesis core can't read zip files.
+[stock_genesis|-o -u]
+The Lion King|Lion King, The (World)|
+```
+
+Once you've created your manifest file, you simply run:
+```
+$ ./cook_batch.sh [-m|--manifest <manifest_file>]
+```
+and the script will go through your manifest and build a UCE for each game.
+
+By default, cook_batch will use <saucepan_home>/batch.manifest as its manifest, but if you pass in 
+"-m|--manifest <manifest_file>", you can specify any file you choose.
+
+### Automatic Manifest Building
+
+Building a manifest file by hand is a drag, so there's also a script to help you create one automatically.
+
+```
+Usage: build_batch_manifest.sh [arguments]...
+
+Arguments:
+  -a|--append
+      Add to the end of the manifest file rather than overwriting it.
+
+  -d|--directory <directory>
+      Instead of looking through all default game directories, search the
+      specified directory only.
+```
+
+If you just run build_batch_manifest by itself, the script will go through all of the standard ROM directories
+(<saucepan_home>/resources/roms*) and add every file that it finds to batch.manifest.  The script will do its
+best to determine which core it should use depending on the directory, but you'll probably want to check it before
+running cook_batch, especially if you want to add flags for each core or game.
+
+By default, each run of build_batch_manifest will overwrite <saucepan_home>/batch.manifest. If you would prefer to have
+it add its findings to the end of the existing file, pass in the "--append" flag.
+
+This is particularly useful in conjunction with the "--directory" parameter, which tells
+build_batch_manifest to look for ROMs in only the specified directory. For example, if you wanted to create a
+manifest containing only MAME2010 and Genesis games, you could do the following:
+```
+$ ./build_batch_manifest.sh --directory resources/roms_mame2010
+$ ./build_batch_manifest.sh --append --directory resources/roms_genesis
+```
 ## Credit Where Due
 
 This thing was made by [slutzo](https://github.com/slutzo).
