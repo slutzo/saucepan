@@ -450,7 +450,7 @@ then
     # Create a new ext4 file system and populate it with a couple
     # of required directories
     truncate -s 4M "${save_temp_file}"
-    mkfs.ext4 "${save_temp_file}" >& /dev/null
+    mkfs.ext4 -F "${save_temp_file}" >& /dev/null
     debugfs -R 'mkdir upper' -w "${save_temp_file}" >& /dev/null
     debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
 else
