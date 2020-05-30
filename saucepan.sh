@@ -417,6 +417,7 @@ popd > /dev/null
 
 # Copy in our XML descriptor and the executable, replacing their
 # contents as appropriate
+game_name=`echo ${game_name} | sed 's|&|\\\&|g'`
 cat "${defaults_dir}/cartridge.xml" | sed "s|GAME_NAME|${game_name}|g" > "${staging_dir}/cartridge.xml"
 if [ "${src_bezel}" != "" ]
 then
