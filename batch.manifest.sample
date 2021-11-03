@@ -31,28 +31,28 @@
 The Adventures of Robby Roto|robby|
 Victory|victory|-n
 
-# These games will use the stock MAME2003-Plus core that
+# These games will use the built-in MAME2003-Plus core that
 # is built in to the ALU. As a result, the UCE size will be
 # substantially smaller.
 #
 # We can specify that no flags should be used for a game
 # by using "--" for its flags. So the game Star Fire below will
 # not use the default "-o" flag.
-[stock_mame2003plus|-o]
+[builtin_mame2003plus|-o]
 Looping|looping|
 Star Fire|starfire|--
 
 # You can have as many sections that use the same core as you like.
-# Here we repeat the stock MAME2003-Plus core, but for this section,
+# Here we repeat the built-in MAME2003-Plus core, but for this section,
 # we won't pass any flags to saucepan by default.
-[stock_mame2003plus|--]
+[builtin_mame2003plus|--]
 Fire One|fireone|
 
-# These games will use the stock Sega Genesis core that
+# These games will use the built-in Sega Genesis core that
 # is built in to the ALU.
 #
 # We use "-u" in our default flags here because our game files
-# are zipped, but the stock Genesis core can't read zip files.
-[stock_genesis|-o -u]
+# are zipped, but the built-in Genesis core can't read zip files.
+[builtin_genesis|-o -u]
 The Lion King|Lion King, The (World)|
 

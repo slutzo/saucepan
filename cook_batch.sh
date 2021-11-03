@@ -52,7 +52,7 @@ done
 
 current_core=""
 current_params=""
-use_stock_core=false
+use_builtin_core=false
 
 while IFS= read -r line
 do
@@ -76,12 +76,12 @@ do
             current_params=""
         fi
 
-        if [[ "${current_core}" =~ ^stock_.* ]]
+        if [[ "${current_core}" =~ ^builtin_.* ]]
         then
-            use_stock_core=true
+            use_builtin_core=true
             current_core=`echo "${current_core}" | cut -f2 -d_`
         else
-            use_stock_core=false
+            use_builtin_core=false
         fi
         continue
     else
@@ -100,7 +100,7 @@ do
                 params="${param_overrides}"
             fi
         fi
-        if [[ "${use_stock_core}" == "true" ]]
+        if [[ "${use_builtin_core}" == "true" ]]
         then
             command_line="./saucepan.sh -s ${current_core} ${params} \"${game_name}\" \"${rom_name}\""
         else

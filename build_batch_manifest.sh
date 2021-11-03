@@ -32,8 +32,8 @@ manifest_file="${script_dir}/batch.manifest"
 # The core we assume we'll use if none is specified
 default_core="mame2003_plus_libretro.so"
 
-# List of stock cores available in the ALU
-stock_core_list="atari2600 colecovision genesis mame2003plus mame2010 nes snes"
+# List of built-in cores available in the ALU
+builtin_core_list="atari2600 colecovision genesis mame2003plus mame2010 nes snes"
 
 # The main ROMs directory
 src_dir_roms="${script_dir}/resources/roms"
@@ -131,15 +131,15 @@ else
         echo "" >> "${manifest_file}"
     fi
 
-    # Scrape the platform-specific ROMs directories. We assume the stock cores
+    # Scrape the platform-specific ROMs directories. We assume the built-in cores
     # for these directories.
-    for platform in ${stock_core_list}
+    for platform in ${builtin_core_list}
     do
         echo $platform
         platform_rom_dir="${src_dir_roms}_${platform}"
         if [ -d "${platform_rom_dir}" ]
         then
-            echo "[stock_${platform}${separator}${no_flags_indicator}]" >> "${manifest_file}"
+            echo "[builtin_${platform}${separator}${no_flags_indicator}]" >> "${manifest_file}"
             # Temporarily change the field separator to line breaks so we 
             # don't break up filenames with spaces in them
             SAVEIFS=$IFS

@@ -43,7 +43,7 @@ to use something different, you can change it by specifying:
 on the command line. Obviously, that core needs to be in your resources/cores
 directory for that to work.
 
-Or, if you'd prefer to use the builtin cores that are provided with the Legends Ultimate,
+Or, if you'd prefer to use the built-in cores that are provided with the Legends Ultimate,
 you can do that too! Assuming that you have a really old firmware that still allows access
 to those cores.
 
@@ -68,7 +68,7 @@ They are:
 * boxart - Contains box art image files named after the associated ROMs. A box art can be any
   format or size. When building the UCE, saucepan will automatically convert it to a 222x306 PNG.
 * cores - Contains custom cores to be packaged into the UCE file. If you want
-  to use the stock cores included with the Legends Ultimate, there doesn't need
+  to use the built-in cores included with the Legends Ultimate, there doesn't need
   to be anything in here.
 * roms - Contains ROM files.
 
@@ -175,9 +175,9 @@ Usage: saucepan.sh [arguments]... <game_name> <rom_name>
           resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively.
 
 Arguments:
-  -b|--builtin-core <builtin_core>
+  -b|--builtin-core <platform>
       Use a built-in ALU core. This will make your UCE file substantially smaller.
-      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
+      <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
       or colecovision.
 
   -c|--core <core_name>
@@ -293,29 +293,29 @@ The file batch.manifest.sample describes the correct format for the manifest, an
 The Adventures of Robby Roto|robby|
 Victory|victory|-n
 
-# These games will use the stock MAME2003-Plus core that
+# These games will use the built-in MAME2003-Plus core that
 # is built in to the ALU. As a result, the UCE size will be
 # substantially smaller.
 #
 # We can specify that no flags should be used for a game
 # by using "--" for its flags. So the game Star Fire below will
 # not use the default "-o" flag.
-[stock_mame2003plus|-o]
+[builtin_mame2003plus|-o]
 Looping|looping|
 Star Fire|starfire|--
 
 # You can have as many sections that use the same core as you like.
-# Here we repeat the stock MAME2003-Plus core, but for this section,
+# Here we repeat the built-in MAME2003-Plus core, but for this section,
 # we won't pass any flags to saucepan by default.
-[stock_mame2003plus|--]
+[builtin_mame2003plus|--]
 Fire One|fireone|
 
-# These games will use the stock Sega Genesis core that
+# These games will use the built-in Sega Genesis core that
 # is built in to the ALU.
 #
 # We use "-u" in our default flags here because our game files
-# are zipped, but the stock Genesis core can't read zip files.
-[stock_genesis|-o -u]
+# are zipped, but the built-in Genesis core can't read zip files.
+[builtin_genesis|-o -u]
 The Lion King|Lion King, The (World)|
 ```
 
