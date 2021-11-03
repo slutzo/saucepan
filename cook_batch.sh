@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # cook_batch.sh - build a bunch of UCE files using saucepan and a manifest file
 

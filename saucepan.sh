@@ -18,19 +18,23 @@ usage()
     echo "          resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively."
     echo
     echo "Arguments:"
+    echo "  -b|--builtin-core <platform>"
+    echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
+    echo "      <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,"
+    echo "      or colecovision."
+    echo
     echo "  -c|--core <core_name>"
     echo "      Use the custom core named <core_name> located in your resources/cores directory."
-    echo
-    echo "  -s|--stock-core <stock_core>"
-    echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
-    echo "      <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,"
-    echo "      or colecovision."
     echo
     echo "  -n|--no-resize"
     echo "      Keep bezel and box art images at their original sizes."
     echo
     echo "  -o|--organize"
-    echo "      Organize UCE files by genre and/or console"
+    echo "      Organize UCE files by genre and/or console."
+    echo
+    echo "  -s|--samples <samples_name>"
+    echo "      By default, we search the samples directories for a file that matches <rom_name>." 
+    echo "      This flag causes the script to search for <samples_name> instead."
     echo
     echo "  -u|--uncompress"
     echo "      Uncompress the ROM file. Currently only works on files in .zip format."
@@ -56,13 +60,13 @@ cleanup()
 trap cleanup EXIT
 
 # Built-in cores located in /emulator on the ALU file system
-stock_core_genesis=genesis_plus_gx_libretro.so
-stock_core_mame2003plus=mame2003_plus_libretro.so
-stock_core_mame2010=mame2010_libretro.so
-stock_core_nes=quicknes_libretro.so
-stock_core_snes=snes_mtfaust-arm64-cortex-a53.so
-stock_core_atari2600=stella_libretro.so
-stock_core_colecovision=libcv.so
+builtin_core_genesis=genesis_plus_gx_libretro.so
+builtin_core_mame2003plus=mame2003_plus_libretro.so
+builtin_core_mame2010=mame2010_libretro.so
+builtin_core_nes=quicknes_libretro.so
+builtin_core_snes=snes_mtfaust-arm64-cortex-a53.so
+builtin_core_atari2600=stella_libretro.so
+builtin_core_colecovision=libcv.so
 
 # The core to use if none are specified on the command line
 default_core_name=mame2003_plus_libretro.so
@@ -81,6 +85,7 @@ src_dir_bezels="${script_dir}/resources/bezels"
 src_dir_boxart="${script_dir}/resources/boxart"
 src_dir_cores="${script_dir}/resources/cores"
 src_dir_roms="${script_dir}/resources/roms"
+src_dir_samples="${script_dir}/resources/samples"
 
 # Default box art and bezel files
 defaults_dir="${script_dir}/defaults"
@@ -96,7 +101,8 @@ boxart_size=222x306
 # Defaults if no command-line arguments
 core_name=""
 target_platform=""
-use_stock_core=false
+samples_name=""
+use_builtin_core=false
 resize_images=true
 alt_defaults=false
 organize_targest=false
@@ -111,6 +117,44 @@ do
             usage
             exit 0
             ;;
+        -b|--builtin-core)
+            if [ "$core_name" != "" ]
+            then
+                echo "ERROR: Multiple cores specified on the command line"
+                exit 1
+            else
+                target_platform="$2"
+                case "${target_platform}" in
+                    genesis)
+                        core_name="${builtin_core_genesis}"
+                        ;;
+                    mame2003plus)
+                        core_name="${builtin_core_mame2003plus}"
+                        ;;
+                    mame2010)
+                        core_name="${builtin_core_mame2010}"
+                        ;;
+                    nes)
+                        core_name="${builtin_core_nes}"
+                        ;;
+                    snes)
+                        core_name="${builtin_core_snes}"
+                        ;;
+                    atari2600)
+                        core_name="${builtin_core_atari2600}"
+                        ;;
+                    colecovision)
+                        core_name="${builtin_core_colecovision}"
+                        ;;
+                    *)
+                        echo "ERROR: There is no builtin core associated with the platform \"$2\""
+                        exit 1
+                        ;;
+                esac
+                use_builtin_core=true
+                shift 2
+            fi
+            ;;
         -c|--core)
             if [ "$core_name" != "" ]
             then
@@ -121,44 +165,6 @@ do
             fi
             shift 2
             ;;
-        -s|--stock-core)
-            if [ "$core_name" != "" ]
-            then
-                echo "ERROR: Multiple cores specified on the command line"
-                exit 1
-            else
-                target_platform="$2"
-                case "${target_platform}" in
-                    genesis)
-                        core_name="${stock_core_genesis}"
-                        ;;
-                    mame2003plus)
-                        core_name="${stock_core_mame2003plus}"
-                        ;;
-                    mame2010)
-                        core_name="${stock_core_mame2010}"
-                        ;;
-                    nes)
-                        core_name="${stock_core_nes}"
-                        ;;
-                    snes)
-                        core_name="${stock_core_snes}"
-                        ;;
-                    atari2600)
-                        core_name="${stock_core_atari2600}"
-                        ;;
-                    colecovision)
-                        core_name="${stock_core_colecovision}"
-                        ;;
-                    *)
-                        echo "ERROR: There is no stock core associated with the name \"$2\""
-                        exit 1
-                        ;;
-                esac
-                use_stock_core=true
-                shift 2
-            fi
-            ;;
         -n|--no-resize)
             echo "Images will not be resized"
             resize_images=false
@@ -167,6 +173,16 @@ do
         -o|--organize)
             organize_targets=true
             shift
+            ;;
+        -s|--samples)
+            if [ "$samples_name" != "" ]
+            then
+                echo "ERROR: Multiple samples specified on the command line"
+                exit 1
+            else
+                samples_name="$2"
+            fi
+            shift 2
             ;;
         -u|--uncompress)
             uncompress_rom=true
@@ -198,17 +214,17 @@ then
 fi
 
 # If using a custom core, figure out the target platform based on the core name.
-# If using a stock core, we already know the target platform.
-if [ "${use_stock_core}" == "false" ]
+# If using a builtin core, we already know the target platform.
+if [ "${use_builtin_core}" == "false" ]
 then
     case "${core_name}" in
         genesis_plus_gx_libretro.so)
             target_platform="genesis"
             ;;
-        mame2003_plus_libretro.so|mame2003_plus_libretro_custom_save.so)
+        mame2003_plus_libretro*.so)
             target_platform="mame2003plus"
             ;;
-        mame2010_libretro.so)
+        mame2010_libretro*.so)
             target_platform="mame2010"
             ;;
         mednafen_gba_libretro.so|mgba_libretro.so)
@@ -223,11 +239,14 @@ then
         snes9x2010_libretro.so)
             target_platform="snes"
             ;;
+        stella_libretro.so)
+            target_platform="atari2600"
+            ;;
     esac
 fi
 
 # If using a custom core, make sure the file really exists before we proceed
-if [ "${use_stock_core}" == "false" ]
+if [ "${use_builtin_core}" == "false" ]
 then
     if [ ! -f "${src_dir_cores}/${core_name}" ]
     then
@@ -250,6 +269,11 @@ then
     exit 1
 else
     rom_name="$2"
+fi
+
+if [ "${samples_name}" == "" ]
+then
+    samples_name="${rom_name}"
 fi
 
 command -v convert > /dev/null
@@ -383,10 +407,33 @@ then
     fi
 fi
 
-# Set up our emulator core
-if [ "${use_stock_core}" == "true" ]
+# Look for a file in the samples directory that matches the ROM.
+# We assume there's only one file with the base rom_name in the samples directory.
+# If there's more, there's a chance we'll grab the wrong one.
+src_samples=""
+if [ "${target_platform}" != "" ]
 then
-    echo "Building with stock core: ${core_name}"
+    # First see if it's in a platform-specific directory.
+    platform_samples_dir="${src_dir_samples}_${target_platform}"
+    if [ -d "${platform_samples_dir}" ]
+    then
+        src_samples=`find "${platform_samples_dir}/" -maxdepth 1 -type f -name "${samples_name}.*" | head -1`
+    fi
+fi
+if [ "${src_samples}" == "" ] && [ -d "${src_dir_samples}" ]
+then
+    # Check for it in the generic directory
+    src_samples=`find "${src_dir_samples}/" -maxdepth 1 -type f -name "${samples_name}.*" | head -1`
+fi
+if [ "${src_samples}" != "" ]
+then
+    echo "Found samples file: ${src_samples}"
+fi
+
+# Set up our emulator core
+if [ "${use_builtin_core}" == "true" ]
+then
+    echo "Building with builtin core: ${core_name}"
     # No need to copy anything. The core is already on the ALU.
     core_path=/emulator/${core_name}
 else
@@ -401,13 +448,32 @@ then
     rom_ext=`basename "${src_rom}" | cut -f2 -d.`
     if [ "${rom_ext}" != "zip" ]
     then
-        echo "WARNING: Can't compress a ROM that isn't a zip file. Leaving it as-is."
+        echo "WARNING: Can't uncompress a ROM that isn't a zip file. Leaving it as-is."
         cp -p "${src_rom}" "${staging_dir}/roms"
     else
         unzip -o "${src_rom}" -d "${staging_dir}/roms" >& /dev/null
     fi
 else
     cp -p "${src_rom}" "${staging_dir}/roms"
+    # If a sample exists, try to zip it up into the ROM
+    if [ -f "${src_samples}" ]
+    then
+        rom_ext=`basename "${src_rom}" | cut -f2 -d.`
+        if [ "${rom_ext}" != "zip" ]
+        then
+            echo "WARNING: Samples are only supported for ROMs that are .zip files. Samples ignored."
+        else
+            echo "Adding ${src_samples} to ROM."
+            # We want to make sure the sample file gets archived as "samples/<sample_file>", so
+            # we copy it into a temporary samples subdirectory and run zip from directly above it.
+            mkdir "${staging_dir}/samples"
+            cp "${src_samples}" "${staging_dir}/samples"
+            pushd "${staging_dir}" > /dev/null
+            zip "${staging_dir}/roms/${rom_name}.zip" "samples/`basename ${src_samples}`" >& /dev/null
+            popd > /dev/null
+            rm -r "${staging_dir}/samples"
+        fi
+    fi
 fi
 
 # Create a relative link for the title image

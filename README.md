@@ -43,13 +43,14 @@ to use something different, you can change it by specifying:
 on the command line. Obviously, that core needs to be in your resources/cores
 directory for that to work.
 
-Or, if you'd prefer to use the stock cores that are provided with the Legends Ultimate,
-you can do that too!
+Or, if you'd prefer to use the builtin cores that are provided with the Legends Ultimate,
+you can do that too! Assuming that you have a really old firmware that still allows access
+to those cores.
 
 Just pass in:
 
 ```
---stock-core genesis|mame2003plus|mame2010|nes|snes|atari2600|colecovision
+--builtin-core genesis|mame2003plus|mame2010|nes|snes|atari2600|colecovision
 ```
 
 This will configure your UCE to use a built-in core so it doesn't have to bundle one into
@@ -84,7 +85,7 @@ $ ln -s /MAME/roms <saucepan_home>/resources/roms
 ```
 
 NOTE: In order to work with a variety of image and ROM file formats, saucepan has no expectations about
-the file extensions of your ROMs, box arts, and bezels.
+the file extensions of your ROMs, box arts, bezels, and samples.
 
 For example, if you're building a UCE for Robby Roto, the script doesn't care if your box art is named
 "robby.jpg" or "robby.png", it will just search for "robby.\*" in your resources directory and work with
@@ -93,6 +94,25 @@ what it finds.
 However, that means that if you have *both* a "robby.png" and a "robby.jpg" in the same directory, all bets
 are off as to which one saucepan will use. It's therefore best to have only one file with the same rom name
 in each resource directory.
+
+### Support for MAME Samples
+
+saucepan now supports MAME samples. If you want to make use of this support, you should also
+create a samples directory or link called "resources/samples".
+
+Only certain cores support MAME samples.  If you find that your samples aren't working, you
+may need to choose a different core.
+
+Note that you will also need zip installed on your system in order for samples support to work.
+ 
+To install zip in Ubuntu, you simply run:
+
+```
+$ sudo apt install zip
+```
+
+Other distributions may require a different install command. You may also require root or sudo
+access to perform an install.
 
 ### Default Box Art and Bezel
 
@@ -108,11 +128,12 @@ Feel free to add your own, or leave it missing if you prefer no bezel.
 
 Instead of having a single generic directory for your roms, bezels, and boxart, you can create separate
 directories for each different target platform. For example, if you want to put all of your MAME2010 
-resources in their own location, you can create any of the following three directories:
+resources in their own location, you can create any of the following directories:
 
 * resources/bezels_mame2010
 * resources/boxart_mame2010
 * resources/roms_mame2010
+* resources/samples_mame2010
 
 If saucepan detects that you are trying to create a MAME2010 UCE, it will first look for resources in
 these directories (if they exist). If it doesn't find what it's looking for in the platform-specific
@@ -154,19 +175,23 @@ Usage: saucepan.sh [arguments]... <game_name> <rom_name>
           resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively.
 
 Arguments:
-  -c|--core <core_name>
-      Use the custom core named <core_name> located in your resources/cores directory.
-
-  -s|--stock-core <stock_core>
+  -b|--builtin-core <builtin_core>
       Use a built-in ALU core. This will make your UCE file substantially smaller.
       <stock_core> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
       or colecovision.
+
+  -c|--core <core_name>
+      Use the custom core named <core_name> located in your resources/cores directory.
 
   -n|--no-resize
       Keep bezel and box art images at their original sizes.
 
   -o|--organize
       Organize UCE files by genre and/or console
+
+  -s|--samples <samples_name>
+      By default, we search the samples directories for a file that matches <rom_name>.
+      This flag causes the script to search for <samples_name> instead.
 
   -u|--uncompress
       Uncompress the ROM file. Currently only works on files in .zip format.
