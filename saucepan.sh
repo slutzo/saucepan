@@ -89,6 +89,7 @@ src_dir_boxart="${script_dir}/resources/boxart"
 src_dir_cores="${script_dir}/resources/cores"
 src_dir_roms="${script_dir}/resources/roms"
 src_dir_samples="${script_dir}/resources/samples"
+src_dir_saves="${script_dir}/resources/saves"
 
 # Default box art, bezel, and save files
 defaults_dir="${script_dir}/defaults"
@@ -109,7 +110,7 @@ target_platform=""
 samples_name=""
 use_builtin_core=false
 resize_images=true
-alt_save=false
+use_alt_save=false
 organize_targest=false
 uncompress_rom=false
 
@@ -194,7 +195,7 @@ do
             shift
             ;;
         -a|--alt-save)
-            alt_save=true
+            use_alt_save=true
             shift
             ;;
         -*|--*) # unrecognized arguments
@@ -524,18 +525,37 @@ md5sum "${game_temp_file}" \
 dd if=/dev/zero of="${game_temp_file}" ibs=16 count=2 obs=16 oflag=append conv=notrunc status=none
 
 # Time to set up the file that's going to be our 4M save area
-if [ "${alt_save}" == "false" ]
+alt_save_copied=false
+if [ "${use_alt_save}" == "true" ]
 then
-    # Create a new ext4 file system and populate it with a couple
-    # of required directories
+    # Use a pre-created save area that contains alternate default settings.
+    # Check for it in the generic directory. If none exists, use the default instead.
+    src_save=`find "${src_dir_saves}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+    if [ "${src_save}" != "" ]
+    then
+        echo "Found custom save file: ${src_save}"
+    elif [ -f "${default_save}" ]
+    then
+        echo "Custom save file not found. Using default save."
+        src_save=${default_save}
+    fi
+    if [ "${src_save}" != "" ]
+    then
+        echo "Using alternative save file ${src_save}"
+        gunzip -c ${src_save} > "${save_temp_file}"
+        alt_save_copied=true
+    else
+        echo "WARNING: No alternative save file could be located."
+    fi
+fi
+if [ "${alt_save_copied}" == "false" ]
+then
+    # We don't have an alt save, so instead create a new ext4 file system and populate it
+    # with a couple of required directories
     truncate -s 4M "${save_temp_file}"
     mkfs.ext4 -F "${save_temp_file}" >& /dev/null
     debugfs -R 'mkdir upper' -w "${save_temp_file}" >& /dev/null
     debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
-else
-    # Use a pre-created save area that contains alternate default settings.
-    echo "Using alternative save file ${default_save}"
-    gunzip -c ${default_save} > "${save_temp_file}"
 fi
 
 # Now get an MD5 checksum of our save area file, and tack that on to the game file

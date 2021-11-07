@@ -279,6 +279,20 @@ $ sudo ./build_save.sh alt retroplayer.ini
 This will create a save area called alt.sav.gz in the local directory. If you copy this to the defaults
 directory, saucepan will use your custom retroplayer.ini when you specify the "-a" flag.
 
+If you want to use different retroplayer.ini files for different games, you can create a separate save
+area for each ROM (named "<rom_name>.sav.gz") and save it in resources/saves. saucepan will look for
+a per-rom save file before it falls back to the default one.
+
+For instance, if you have specific emulator settings that you only want to use for Robby Roto, you might create
+a custom ini file called "robby.ini", then create a save file by running:
+
+```
+$ sudo ./build_save.sh robby robby.ini
+```
+
+This will create a save file in the local directory called robby.sav.gz. You can then copy this into
+resources/saves, and saucepan will find it when you build a UCE for robby.
+
 There are many more settings that can be tweaked in retroplayer.ini. Take a look at
 tools/retroplayer_ro.ini for a more complete list.
 
