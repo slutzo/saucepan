@@ -175,6 +175,9 @@ Usage: saucepan.sh [arguments]... <game_name> <rom_name>
           resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively.
 
 Arguments:
+  -a|--alt-save
+      Use a pre-created save area instead of building a new one from scratch.
+
   -b|--builtin-core <platform>
       Use a built-in ALU core. This will make your UCE file substantially smaller.
       <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
@@ -250,6 +253,34 @@ allow multi-level navigation, but for now, it's better than nothing.
 
 If you're using a non-MAME core, the UCE will be written to a directory named after the target platform
 (e.g., Atari 2600, Genesis, etc.)
+
+### Using Different Emulator Defaults (Advanced)
+
+When the ALU runs a game, the default emulator settings are read from a configuration file called
+retroplayer.ini. This file is part of the ALU system software, and can not be directly edited. However,
+you can package a custom retroplayer.ini along with your UCE file, and the settings within will override
+the ALU defaults.
+
+To use a custom retroplayer.ini, you have to create a custom save area at "defaults/alt.sav.gz". Then,
+If you specify "-a" or "--alt-save" when you run saucepan, this save area is bundled up into the UCE file
+it creates.
+
+saucepan includes a sample alt.sav.gz that was created from the ini file in tools/retroplayer.ini.
+This sets the display mode to "Fit", turns on the horizontal scan line filter, and disables bilinear
+filtering for some games where the ALU inexplicably turns it on by default (e.g., several Capcom games).
+
+To create your own custom defaults, modify the contents of retroplayer.ini. Then, from the tools directory,
+run:
+
+```
+$ sudo ./build_save.sh alt retroplayer.ini
+```
+
+This will create a save area called alt.sav.gz in the local directory. If you copy this to the defaults
+directory, saucepan will use your custom retroplayer.ini when you specify the "-a" flag.
+
+There are many more settings that can be tweaked in retroplayer.ini. Take a look at
+tools/retroplayer_ro.ini for a more complete list.
 
 ## Batch Processing
 

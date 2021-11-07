@@ -23,6 +23,6 @@ then
     exit 1
 fi
 
-game_name=`echo ${uce_file} | cut -f1 -d.`
+game_name=`basename ${uce_file} | cut -f1 -d.`
 save_data_file=`dirname $0`/${game_name}.savedata
 tail -c ${save_data_size} ${uce_file} > ${save_data_file}

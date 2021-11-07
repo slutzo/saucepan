@@ -18,6 +18,9 @@ usage()
     echo "          resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively."
     echo
     echo "Arguments:"
+    echo "  -a|--alt-save"
+    echo "      Use a pre-created save area instead of building a new one from scratch."
+    echo
     echo "  -b|--builtin-core <platform>"
     echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
     echo "      <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,"
@@ -87,12 +90,14 @@ src_dir_cores="${script_dir}/resources/cores"
 src_dir_roms="${script_dir}/resources/roms"
 src_dir_samples="${script_dir}/resources/samples"
 
-# Default box art and bezel files
+# Default box art, bezel, and save files
 defaults_dir="${script_dir}/defaults"
 default_boxart_name="boxart.png"
 default_boxart="${defaults_dir}/${default_boxart_name}"
 default_bezel_name="bezel.png"
 default_bezel="${defaults_dir}/${default_bezel_name}"
+default_save_name="alt.sav.gz"
+default_save="${defaults_dir}/${default_save_name}"
 
 # Recommended dimensions for images
 bezel_size=1280x720
@@ -104,7 +109,7 @@ target_platform=""
 samples_name=""
 use_builtin_core=false
 resize_images=true
-alt_defaults=false
+alt_save=false
 organize_targest=false
 uncompress_rom=false
 
@@ -188,8 +193,8 @@ do
             uncompress_rom=true
             shift
             ;;
-        -a|--alt-defaults)
-            alt_defaults=true
+        -a|--alt-save)
+            alt_save=true
             shift
             ;;
         -*|--*) # unrecognized arguments
@@ -455,8 +460,8 @@ then
     fi
 else
     cp -p "${src_rom}" "${staging_dir}/roms"
-    # If a sample exists, try to zip it up into the ROM
-    if [ -f "${src_samples}" ]
+    # If a MAME sample exists, try to zip it up into the ROM
+    if [[ "${target_platform}" =~ "mame" ]] && [ -f "${src_samples}" ]
     then
         rom_ext=`basename "${src_rom}" | cut -f2 -d.`
         if [ "${rom_ext}" != "zip" ]
@@ -475,6 +480,13 @@ else
         fi
     fi
 fi
+
+# Commenting this out for now because I don't believe it really does anything.
+# For MAME, create an empty hiscore.dat to fix high score saving in some ROMs.
+#if [[ "${target_platform}" =~ "mame" ]]
+#then
+#    touch ${staging_dir}/roms/hiscore.dat
+#fi
 
 # Create a relative link for the title image
 pushd "${staging_dir}" > /dev/null
@@ -512,7 +524,7 @@ md5sum "${game_temp_file}" \
 dd if=/dev/zero of="${game_temp_file}" ibs=16 count=2 obs=16 oflag=append conv=notrunc status=none
 
 # Time to set up the file that's going to be our 4M save area
-if [ "${alt_defaults}" == "false" ]
+if [ "${alt_save}" == "false" ]
 then
     # Create a new ext4 file system and populate it with a couple
     # of required directories
@@ -521,8 +533,9 @@ then
     debugfs -R 'mkdir upper' -w "${save_temp_file}" >& /dev/null
     debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
 else
-    # Use a pre-built save area that contains alternate default settings
-    gunzip -c ${defaults_dir}/alt.sav.gz > "${save_temp_file}"
+    # Use a pre-created save area that contains alternate default settings.
+    echo "Using alternative save file ${default_save}"
+    gunzip -c ${default_save} > "${save_temp_file}"
 fi
 
 # Now get an MD5 checksum of our save area file, and tack that on to the game file
