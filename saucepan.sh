@@ -18,9 +18,6 @@ usage()
     echo "          resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively."
     echo
     echo "Arguments:"
-    echo "  -a|--alt-save"
-    echo "      Use a pre-created save area instead of building a new one from scratch."
-    echo
     echo "  -b|--builtin-core <platform>"
     echo "      Use a built-in ALU core. This will make your UCE file substantially smaller."
     echo "      <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,"
@@ -29,11 +26,17 @@ usage()
     echo "  -c|--core <core_name>"
     echo "      Use the custom core named <core_name> located in your resources/cores directory."
     echo
+    echo "  -i|--ini-file"
+    echo "      Use a pre-created ini file instead of the ALU system defaults."
+    echo
     echo "  -n|--no-resize"
     echo "      Keep bezel and box art images at their original sizes."
     echo
     echo "  -o|--organize"
     echo "      Organize UCE files by genre and/or console."
+    echo
+    echo "  -r|--restore-save"
+    echo "      Use a backed up save area instead of building a new one from scratch."
     echo
     echo "  -s|--samples <samples_name>"
     echo "      By default, we search the samples directories for a file that matches <rom_name>." 
@@ -54,6 +57,10 @@ cleanup()
     if [ ! -z "${save_temp_file}" ] && [ -f "${save_temp_file}" ]
     then
         rm "${save_temp_file}"
+    fi
+    if [ ! -z "${save_temp_dir}" ] && [ -d "${save_temp_dir}" ]
+    then
+        rm -r "${save_temp_dir}"
     fi
     if [ ! -z "${staging_dir}" ] && [ -d "${staging_dir}" ]
     then
@@ -87,17 +94,20 @@ target_dir="${script_dir}/target"
 src_dir_bezels="${script_dir}/resources/bezels"
 src_dir_boxart="${script_dir}/resources/boxart"
 src_dir_cores="${script_dir}/resources/cores"
+src_dir_inis="${script_dir}/resources/inis"
 src_dir_roms="${script_dir}/resources/roms"
 src_dir_samples="${script_dir}/resources/samples"
 src_dir_saves="${script_dir}/resources/saves"
 
-# Default box art, bezel, and save files
+# Default box art, bezel, ini, and save files
 defaults_dir="${script_dir}/defaults"
 default_boxart_name="boxart.png"
 default_boxart="${defaults_dir}/${default_boxart_name}"
 default_bezel_name="bezel.png"
 default_bezel="${defaults_dir}/${default_bezel_name}"
-default_save_name="alt.sav.gz"
+default_ini_name="retroplayer.ini"
+default_ini="${defaults_dir}/${default_ini_name}"
+default_save_name="default.sav.gz"
 default_save="${defaults_dir}/${default_save_name}"
 
 # Recommended dimensions for images
@@ -110,9 +120,10 @@ target_platform=""
 samples_name=""
 use_builtin_core=false
 resize_images=true
-use_alt_save=false
+restore_save=false
 organize_targest=false
 uncompress_rom=false
+use_ini=false
 
 # Parse out command-line options
 positional_args=""
@@ -194,8 +205,12 @@ do
             uncompress_rom=true
             shift
             ;;
-        -a|--alt-save)
-            use_alt_save=true
+        -r|--restore-save)
+            restore_save=true
+            shift
+            ;;
+        -i|--ini-file)
+            use_ini=true
             shift
             ;;
         -*|--*) # unrecognized arguments
@@ -436,6 +451,40 @@ then
     echo "Found samples file: ${src_samples}"
 fi
 
+# Check for a save file in the resources directory. If none exists, use the default instead.
+src_save=""
+if [ "${restore_save}" == "true" ]
+then
+    src_save=`find "${src_dir_saves}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+    if [ "${src_save}" != "" ]
+    then
+        echo "Found custom save file: ${src_save}"
+    elif [ -f "${default_save}" ]
+    then
+        echo "Custom save file not found. Using default save."
+        src_save="${default_save}"
+    else
+        echo "No save file found. Creating a default save area instead."
+    fi
+fi
+
+# Check for an ini file in the generic directory. If none exists, use the default instead.
+src_ini=""
+if [ "${use_ini}" == "true" ]
+then
+    src_ini=`find "${src_dir_inis}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
+    if [ "${src_ini}" != "" ]
+    then
+        echo "Found ini file: ${src_ini}"
+    elif [ -f "${default_ini}" ]
+    then
+        echo "Custom ini file not found. Using default ini."
+        src_ini="${default_ini}"
+    else
+        echo "No ini file found. System defaults will be used."
+    fi
+fi
+
 # Set up our emulator core
 if [ "${use_builtin_core}" == "true" ]
 then
@@ -512,8 +561,8 @@ cat ${exec_src} | sed "s|CORE_PATH|${core_path}|g" | sed "s|ROM_NAME|${rom_file_
 chmod 755 "${staging_dir}/exec.sh"
 
 # The staging area is built, so let's cook it up into a UCE
-game_temp_file=${working_dir}/${sanitized_game_name}_game.tmp
-save_temp_file=${working_dir}/${sanitized_game_name}_save.tmp
+game_temp_file="${working_dir}/${sanitized_game_name}_game.tmp"
+save_temp_file="${working_dir}/${sanitized_game_name}_save.tmp"
 mksquashfs "${staging_dir}" "${game_temp_file}" -comp gzip -b 256K -root-owned -noappend > /dev/null
 
 # Next up is a 16-byte MD5 checksum of the squashfs file we just made,
@@ -525,37 +574,39 @@ md5sum "${game_temp_file}" \
 dd if=/dev/zero of="${game_temp_file}" ibs=16 count=2 obs=16 oflag=append conv=notrunc status=none
 
 # Time to set up the file that's going to be our 4M save area
-alt_save_copied=false
-if [ "${use_alt_save}" == "true" ]
+save_area_restored=false
+if [ "${src_save}" != "" ]
 then
-    # Use a pre-created save area that contains alternate default settings.
-    # Check for it in the generic directory. If none exists, use the default instead.
-    src_save=`find "${src_dir_saves}/" -maxdepth 1 -type f -name "${rom_name}.*" | head -1`
-    if [ "${src_save}" != "" ]
-    then
-        echo "Found custom save file: ${src_save}"
-    elif [ -f "${default_save}" ]
-    then
-        echo "Custom save file not found. Using default save."
-        src_save=${default_save}
-    fi
-    if [ "${src_save}" != "" ]
-    then
-        echo "Using alternative save file ${src_save}"
-        gunzip -c ${src_save} > "${save_temp_file}"
-        alt_save_copied=true
-    else
-        echo "WARNING: No alternative save file could be located."
-    fi
+    # Use a backed up save area. Useful if you want to save high scores and settings.
+    echo "Using backed up save file ${src_save}"
+    gunzip -c ${src_save} > "${save_temp_file}"
+    save_area_restored=true
 fi
-if [ "${alt_save_copied}" == "false" ]
+if [ "${save_area_restored}" == "false" ]
 then
-    # We don't have an alt save, so instead create a new ext4 file system and populate it
-    # with a couple of required directories
-    truncate -s 4M "${save_temp_file}"
-    mkfs.ext4 -F "${save_temp_file}" >& /dev/null
-    debugfs -R 'mkdir upper' -w "${save_temp_file}" >& /dev/null
-    debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
+    # We don't have a backed up save, so instead create a new ext4 file system and populate it
+    # with a couple of required directories and, optionally, an ini file
+    save_temp_dir="${working_dir}/${sanitized_game_name}_save"
+    mkdir "${save_temp_dir}"
+    mkdir "${save_temp_dir}/upper"
+    if [ "${src_ini}" != "" ]
+    then
+        echo "Using ini file ${src_ini}"
+        dest_ini="${save_temp_dir}/upper/retroplayer.ini"
+        cp "${src_ini}" "${dest_ini}"
+        # Give the ALU write access to the ini file, or changes you make to the settings
+        # won't stick around.
+        chmod 666 ${dest_ini}
+    fi
+    mkdir "${save_temp_dir}/work"
+    mkfs.ext4 -d "${save_temp_dir}" "${save_temp_file}" 4M >& /dev/null
+
+    # This is the old way of creating a save area, which I'm keeping around for debugging
+    # purposes for now in case the new way has issues.
+    #truncate -s 4M "${save_temp_file}"
+    #mkfs.ext4 -F "${save_temp_file}" >& /dev/null
+    #debugfs -R 'mkdir upper' -w "${save_temp_file}" >& /dev/null
+    #debugfs -R 'mkdir work' -w "${save_temp_file}" >& /dev/null
 fi
 
 # Now get an MD5 checksum of our save area file, and tack that on to the game file

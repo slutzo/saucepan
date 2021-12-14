@@ -175,9 +175,6 @@ Usage: saucepan.sh [arguments]... <game_name> <rom_name>
           resources/boxart/<rom_name>.png and resources/bezels/<rom_name>.png respectively.
 
 Arguments:
-  -a|--alt-save
-      Use a pre-created save area instead of building a new one from scratch.
-
   -b|--builtin-core <platform>
       Use a built-in ALU core. This will make your UCE file substantially smaller.
       <platform> must be genesis, mame2003plus, mame2010, nes, snes, atari2600,
@@ -186,11 +183,17 @@ Arguments:
   -c|--core <core_name>
       Use the custom core named <core_name> located in your resources/cores directory.
 
+  -i|--ini-file
+      Use a pre-created ini file instead of the ALU system defaults.
+
   -n|--no-resize
       Keep bezel and box art images at their original sizes.
 
   -o|--organize
       Organize UCE files by genre and/or console
+
+  -r|--restore-save
+      Use a backed up save area instead of building a new one from scratch.
 
   -s|--samples <samples_name>
       By default, we search the samples directories for a file that matches <rom_name>.
@@ -247,54 +250,59 @@ For example, if you build a Robby Roto UCE using a MAME 2003-Plus core, it will 
 
 <saucepan_home>/target/Maze/Digging/robby.zip
 
-Of course, the ALU only reads the first subdirectory name when scanning a USB stick for Add-Ons,
-so the game will show up under "Maze". Perhaps AtGames will someday enhance the firmware to
-allow multi-level navigation, but for now, it's better than nothing.
+Depending on your ALU's firmware version, the ALU interface may only display a single level of your
+file system hierarchy.  So a UCE located in "Maze/Digging" will show up under "Maze".
+
+You can find the catver.ini files for mame2003, mame2003plus, and mame2010 in the saucepan's defaults
+directory. Note that these are not verbatim copies of catver.ini; some minor modifications have been
+made to work around bugs with certain directory names. Feel free to modify them to suit your preferences.
 
 If you're using a non-MAME core, the UCE will be written to a directory named after the target platform
 (e.g., Atari 2600, Genesis, etc.)
 
-### Using Different Emulator Defaults (Advanced)
+### Using Different Emulator Defaults
 
 When the ALU runs a game, the default emulator settings are read from a configuration file called
-retroplayer.ini. This file is part of the ALU system software, and can not be directly edited. However,
-you can package a custom retroplayer.ini along with your UCE file, and the settings within will override
+retroplayer_ro.ini. This file is part of the ALU system software, and can not be directly edited. However,
+you can package a file called retroplayer.ini along with your UCE file, and the settings within will override
 the ALU defaults.
 
-To use a custom retroplayer.ini, you have to create a custom save area at "defaults/alt.sav.gz". Then,
-If you specify "-a" or "--alt-save" when you run saucepan, this save area is bundled up into the UCE file
-it creates.
+To use a custom ini, specify "--use-ini" on the command line.  By default, this will read the
+retroplayer.ini file from the "defaults" directory and automatically package it up with your UCE.
 
-saucepan includes a sample alt.sav.gz that was created from the ini file in tools/retroplayer.ini.
-This sets the display mode to "Fit", turns on the horizontal scan line filter, and disables bilinear
-filtering for some games where the ALU inexplicably turns it on by default (e.g., several Capcom games).
+The default retroplayer.ini delivered with saucepan is configured with the following settings:
+* Sets the display mode to "Fit"
+* Turns on the horizontal scanline filter
+* Disables bilinear filtering for some games where the ALU inexplicably turns it on by default (e.g., several Capcom games)
+* Fixes the repeated popping sound that occurs in several early Namco games
 
-To create your own custom defaults, modify the contents of retroplayer.ini. Then, from the tools directory,
-run:
+If you want a particular ROM to have a different retroplayer.ini, create a directory under resources called
+"inis", and save your custom ini file to it as "<rom_name>.ini". When you specify "--use-ini", saucepan will
+first look for this file and, if it doesn't exist, will use the default instead.
+
+For those who are interested, retroplayer_ro.ini is included in the "tools" directory.  This file shows
+the ALU's default settings, and makes for a useful reference if you want to experiment with different
+settings on your own. Note that the included file was extracted from a very early firmware version, so it
+may not reflect the ALU's defaults in more recent revisions.
+
+### Rebuilding a UCE with the Same Save Area
+
+If you want to rebuild a UCE but you want to keep its current settings and high scores, you can backup
+your UCE's save area and tell saucepan to use it when building the new UCE.
+
+To do this, first create a subdirectory called "saves" in the "resources" directory. Then you can backup a UCE's
+save with the backup_save_area.sh script in the "tools" directory, like so:
 
 ```
-$ sudo ./build_save.sh alt retroplayer.ini
+$ tools/backup_save_area.sh <path_to_UCE_file>
 ```
 
-This will create a save area called alt.sav.gz in the local directory. If you copy this to the defaults
-directory, saucepan will use your custom retroplayer.ini when you specify the "-a" flag.
+This will extract the save area from the UCE, compress it, and store it in resources/saves under the name
+"<rom_name>.sav.gz".
 
-If you want to use different retroplayer.ini files for different games, you can create a separate save
-area for each ROM (named "<rom_name>.sav.gz") and save it in resources/saves. saucepan will look for
-a per-rom save file before it falls back to the default one.
-
-For instance, if you have specific emulator settings that you only want to use for Robby Roto, you might create
-a custom ini file called "robby.ini", then create a save file by running:
-
-```
-$ sudo ./build_save.sh robby robby.ini
-```
-
-This will create a save file in the local directory called robby.sav.gz. You can then copy this into
-resources/saves, and saucepan will find it when you build a UCE for robby.
-
-There are many more settings that can be tweaked in retroplayer.ini. Take a look at
-tools/retroplayer_ro.ini for a more complete list.
+To use this save area when building a UCE, simply specify "--restore-save" on the saucepan command line.
+saucepan will look for your custom save area in "resources/saves".  If it can't find one, it will instead
+use "defaults/default.sav.gz".  default.sav.gz is a basic save area that includes the default retroplayer.ini.
 
 ## Batch Processing
 
