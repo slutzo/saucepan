@@ -46,3 +46,4 @@ save_temp_file="${temp_dir}/${rom_name}.sav"
 save_dest_file="${saves_dir}/${rom_name}.sav.gz"
 tail -c ${save_data_size} "${uce_file}" > "${save_temp_file}"
 gzip -c "${save_temp_file}" > "${save_dest_file}"
+rm ${save_temp_file}
