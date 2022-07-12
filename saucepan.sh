@@ -330,7 +330,7 @@ if [ "${src_rom}" != "" ]
 then
     echo "Found ROM file: ${src_rom}"
 else
-    echo "Could not locate ROM file for \"${rom_name}\". Exiting."
+    echo "** Could not locate ROM file for \"${rom_name}\". Exiting."
     exit 1
 fi
 
@@ -371,7 +371,7 @@ if [ "${src_boxart}" != "" ]
 then
     echo "Found custom box art: ${src_boxart}"
 else
-    echo "Custom box art not found. Using default box art"
+    echo "** Custom box art not found for \"${rom_name}\". Using default box art"
 	src_boxart=${default_boxart}
 fi
 dest_boxart=${staging_dir}/boxart/boxart.png
@@ -412,7 +412,7 @@ then
     echo "Found custom bezel: ${src_bezel}"
 elif [ -f "${default_bezel}" ]
 then
-    echo "Custom bezel not found. Using default bezel."
+    echo "** Custom bezel not found for \"${rom_name}\". Using default bezel."
     src_bezel=${default_bezel}
 else
     echo "Not using a bezel"
