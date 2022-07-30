@@ -16,13 +16,13 @@ then
 fi
 
 uce_file=$1
-if [ ! -f ${uce_file} ]
+if [ ! -f "${uce_file}" ]
 then
     echo ${uce_file} is not a valid file.
     usage
     exit 1
 fi
 
-game_name=`basename ${uce_file} | cut -f1 -d.`
+game_name=`basename "${uce_file}" | cut -f1 -d.`
 save_data_file=`dirname $0`/${game_name}.savedata
-tail -c ${save_data_size} ${uce_file} > ${save_data_file}
+tail -c ${save_data_size} "${uce_file}" > ${save_data_file}
