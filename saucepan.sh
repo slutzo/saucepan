@@ -248,6 +248,9 @@ then
         mame2010_libretro*.so)
             target_platform="mame2010"
             ;;
+        fbneo_libretro*.so)
+            target_platform="fbneo"
+            ;;
         mednafen_gba_libretro.so|mgba_libretro.so)
             target_platform="gba"
             ;;
@@ -620,7 +623,7 @@ then
     # Determine which subdirectory to put the file into, depending on platform
     case "${target_platform}"
     in
-        mame2003plus|mame2010)
+        mame2003plus|mame2010|fbneo)
             game_category=`grep ^${rom_name}= ${defaults_dir}/${target_platform}/catver.ini \
                 | head -1 \
                 | cut -f2 -d= \

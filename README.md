@@ -151,6 +151,7 @@ Valid platform names are:
 
 * atari2600
 * colecovision
+* fbneo
 * gba
 * genesis
 * mame2003plus
@@ -253,7 +254,7 @@ For example, if you build a Robby Roto UCE using a MAME 2003-Plus core, it will 
 Depending on your ALU's firmware version, the ALU interface may only display a single level of your
 file system hierarchy.  So a UCE located in "Maze/Digging" will show up under "Maze".
 
-You can find the catver.ini files for mame2003, mame2003plus, and mame2010 in the saucepan's defaults
+You can find the catver.ini files for mame2003, mame2003plus, mame2010, and fbneo in saucepan's defaults
 directory. Note that these are not verbatim copies of catver.ini; some minor modifications have been
 made to work around bugs with certain directory names. Feel free to modify them to suit your preferences.
 
