@@ -26,6 +26,9 @@ usage()
     echo "  -c|--core <core_name>"
     echo "      Use the custom core named <core_name> located in your resources/cores directory."
     echo
+    echo "  -f|--flatten"
+    echo "      Use only one level of folders when organizing. Only works in conjunction with -o."
+    echo
     echo "  -i|--ini-file"
     echo "      Use a pre-created ini file instead of the ALU system defaults."
     echo
@@ -122,6 +125,7 @@ use_builtin_core=false
 resize_images=true
 restore_save=false
 organize_targest=false
+flatten=false
 uncompress_rom=false
 use_ini=false
 
@@ -189,6 +193,10 @@ do
             ;;
         -o|--organize)
             organize_targets=true
+            shift
+            ;;
+        -f|--flatten)
+            flatten=true
             shift
             ;;
         -s|--samples)
@@ -338,7 +346,7 @@ else
 fi
 
 # Replace any characters in the game name that are likely to confuse the file system
-sanitized_game_name=`echo "$1" | sed "s|[ :']|_|g"`
+sanitized_game_name=`echo "$1" | sed "s|[ :'*]|_|g"`
 
 staging_dir=${working_dir}/AddOn_${sanitized_game_name}
 mkdir -p "${staging_dir}/boxart"
@@ -629,6 +637,10 @@ then
                 | cut -f2 -d= \
                 | sed 's| \/|\/|g' \
                 | sed 's|\/ |\/|g'`
+            if [ "${flatten}" == "true" ]
+            then
+                game_category=`echo "${game_category}" | cut -f1 -d/`
+            fi
             ;;
         genesis)
             game_category="Genesis"

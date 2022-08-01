@@ -184,6 +184,9 @@ Arguments:
   -c|--core <core_name>
       Use the custom core named <core_name> located in your resources/cores directory.
 
+  -f|--flatten
+      Use only one level of folders when organizing. Only works in conjunction with -o.
+
   -i|--ini-file
       Use a pre-created ini file instead of the ALU system defaults.
 
@@ -253,6 +256,9 @@ For example, if you build a Robby Roto UCE using a MAME 2003-Plus core, it will 
 
 Depending on your ALU's firmware version, the ALU interface may only display a single level of your
 file system hierarchy.  So a UCE located in "Maze/Digging" will show up under "Maze".
+
+You can force the automatic organization to only use a single level of folders by specifying
+the "--flatten" flag.
 
 You can find the catver.ini files for mame2003, mame2003plus, mame2010, and fbneo in saucepan's defaults
 directory. Note that these are not verbatim copies of catver.ini; some minor modifications have been
