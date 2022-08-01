@@ -382,6 +382,18 @@ and the script will go through your manifest and build a UCE for each game.
 By default, cook_batch will use <saucepan_home>/batch.manifest as its manifest, but if you pass in 
 "-m|--manifest <manifest_file>", you can specify any file you choose.
 
+You can also specify "-p|--prefix" to use the prefix feature. Any line in your manifest file that
+begins with a #: is considered a prefix. With the prefix flag turned on, that prefix is prepended to
+the name of any game that comes afterwards. For instance, a manifest that reads:
+```
+#:1979 - 
+Fire One|fireone|
+Star Fire|starfire|
+```
+will produce two UCEs, one with the game name "1979 - Star Fire" and one with a game name
+"1979 - Fire One".  (Note that there is a space after the dash in the prefix above.) To clear the prefix,
+simply insert a line that is "#:" by itself.
+
 ### Automatic Manifest Building
 
 Building a manifest file by hand is a drag, so there's also a script to help you create one automatically.

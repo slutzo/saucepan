@@ -5,7 +5,7 @@
 usage()
 {
     echo
-    echo "Usage: `basename $0` [-m|--manifest <manifest_file>]"
+    echo "Usage: `basename $0` [-m|--manifest <manifest_file>] [-p|--prefix]"
     echo
 }
 
@@ -19,6 +19,8 @@ separator="|"
 no_flags_indicator="--"
 
 manifest_file="${script_dir}/batch.manifest"
+use_prefix=false
+prefix=""
 
 # Parse out command-line options
 while (( "$#" ))
@@ -42,6 +44,10 @@ do
             fi
             shift 2
             ;;
+        -p|--prefix)
+            use_prefix=true
+            shift
+            ;;
         -*|--*) # unrecognized arguments
             echo "ERROR: Unrecognized argument $1"
             usage
@@ -56,6 +62,13 @@ use_builtin_core=false
 
 while IFS= read -r line
 do
+    if [[ "${line}" =~ ^#:.* ]]
+    then
+        # this is a prefix we want to apply to anything that follows
+        prefix="`echo "${line}" | cut -c 3-`"
+        continue
+    fi
+
     if [[ "${line}" == "" ]] || [[ "${line}" =~ ^#.* ]]
     then
         # skip empty lines and comments
@@ -86,7 +99,11 @@ do
         continue
     else
         # This line describes a UCE to build
-        game_name=`echo "${line}" | cut -f1 -d${separator}`
+        game_name="`echo "${line}" | cut -f1 -d${separator}`"
+        if [ "${use_prefix}" == "true" ]
+        then
+            game_name="${prefix}${game_name}"
+        fi
         rom_name=`echo "${line}" | cut -f2 -d${separator}`
         param_overrides=`echo "${line}" | cut -f3 -d${separator}`
 
