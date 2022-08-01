@@ -375,7 +375,7 @@ The Lion King|Lion King, The (World)|
 
 Once you've created your manifest file, you simply run:
 ```
-$ ./cook_batch.sh [-m|--manifest <manifest_file>]
+$ ./cook_batch.sh [-m|--manifest <manifest_file>] [-p|--prefix]
 ```
 and the script will go through your manifest and build a UCE for each game.
 
