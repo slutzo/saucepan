@@ -5,7 +5,7 @@
 usage()
 {
     echo
-    echo "Usage: `basename $0` [-m|--manifest <manifest_file>] [-p|--prefix]"
+    echo "Usage: `basename $0` [-k|--keep-existing] [-m|--manifest <manifest_file>] [-p|--prefix]"
     echo
 }
 
@@ -21,6 +21,7 @@ no_flags_indicator="--"
 manifest_file="${script_dir}/batch.manifest"
 use_prefix=false
 prefix=""
+keep_existing=false
 
 # Parse out command-line options
 while (( "$#" ))
@@ -46,6 +47,10 @@ do
             ;;
         -p|--prefix)
             use_prefix=true
+            shift
+            ;;
+        -k|--keep-existing)
+            keep_existing=true
             shift
             ;;
         -*|--*) # unrecognized arguments
@@ -82,7 +87,7 @@ do
         current_core=`echo "${line}" | cut -f2 -d[ | cut -f1 -d${separator}`
         current_params=`echo "${line}" | cut -f2 -d${separator} | cut -f1 -d]`
 
-        # Allow the use of "--" to specify no flags, just to be consisent with
+        # Allow the use of "--" to specify no flags, just to be consistent with
         # the format for individual games
         if [[ "${current_params}" == "${no_flags_indicator}" ]]
         then
@@ -108,16 +113,20 @@ do
         param_overrides=`echo "${line}" | cut -f3 -d${separator}`
 
         params="${current_params}"
-        if [[ "${param_overrides}" != "" ]]
+        if [ "${param_overrides}" != "" ]
         then
-            if [[ "${param_overrides}" == "${no_flags_indicator}" ]]
+            if [ "${param_overrides}" == "${no_flags_indicator}" ]
             then
                 params=""
             else
                 params="${param_overrides}"
             fi
         fi
-        if [[ "${use_builtin_core}" == "true" ]]
+        if [ "${keep_existing}" == "true" ]
+        then
+            params="${params} -k"
+        fi
+        if [ "${use_builtin_core}" == "true" ]
         then
             command_line="./saucepan.sh -s ${current_core} ${params} \"${game_name}\" \"${rom_name}\""
         else

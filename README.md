@@ -190,11 +190,14 @@ Arguments:
   -i|--ini-file
       Use a pre-created ini file instead of the ALU system defaults.
 
+  -k|--keep-existing
+      If this UCE already exists in the target directory, don't overwrite it.
+
   -n|--no-resize
       Keep bezel and box art images at their original sizes.
 
   -o|--organize
-      Organize UCE files by genre and/or console
+      Organize UCE files by genre and/or console.
 
   -r|--restore-save
       Use a backed up save area instead of building a new one from scratch.
@@ -381,7 +384,7 @@ The Lion King|Lion King, The (World)|
 
 Once you've created your manifest file, you simply run:
 ```
-$ ./cook_batch.sh [-m|--manifest <manifest_file>] [-p|--prefix]
+$ ./cook_batch.sh [-k|--keep-existing] [-m|--manifest <manifest_file>] [-p|--prefix]
 ```
 and the script will go through your manifest and build a UCE for each game.
 
@@ -399,6 +402,10 @@ Star Fire|starfire|
 will produce two UCEs, one with the game name "1979 - Star Fire" and one with a game name
 "1979 - Fire One".  (Note that there is a space after the dash in the prefix above.) To clear the prefix,
 simply insert a line that is "#:" by itself.
+
+The "--keep-existing" flag will pass the "--keep-existing" flag on to saucepan whenever it runs it.  This
+is convenient when you've added a couple of files to a manifest, and you only want to build those without
+rebuilding all of the UCEs that already exist.
 
 ### Automatic Manifest Building
 

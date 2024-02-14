@@ -32,6 +32,9 @@ usage()
     echo "  -i|--ini-file"
     echo "      Use a pre-created ini file instead of the ALU system defaults."
     echo
+    echo "  -k|--keep-existing"
+    echo "      If this UCE already exists in the target directory, don't overwrite it."
+    echo
     echo "  -n|--no-resize"
     echo "      Keep bezel and box art images at their original sizes."
     echo
@@ -124,10 +127,11 @@ samples_name=""
 use_builtin_core=false
 resize_images=true
 restore_save=false
-organize_targest=false
-flatten=false
+organize_targets=false
 uncompress_rom=false
 use_ini=false
+flatten=false
+keep_existing=false
 
 # Parse out command-line options
 positional_args=""
@@ -195,10 +199,6 @@ do
             organize_targets=true
             shift
             ;;
-        -f|--flatten)
-            flatten=true
-            shift
-            ;;
         -s|--samples)
             if [ "$samples_name" != "" ]
             then
@@ -219,6 +219,14 @@ do
             ;;
         -i|--ini-file)
             use_ini=true
+            shift
+            ;;
+        -f|--flatten)
+            flatten=true
+            shift
+            ;;
+        -k|--keep-existing)
+            keep_existing=true
             shift
             ;;
         -*|--*) # unrecognized arguments
@@ -347,6 +355,57 @@ fi
 
 # Replace any characters in the game name that are likely to confuse the file system
 sanitized_game_name=`echo "$1" | sed "s|[ :'*]|_|g"`
+
+if [ "${organize_targets}" == "true" ]
+then
+    # Determine which subdirectory to put the file into, depending on platform
+    case "${target_platform}"
+    in
+        mame2003plus|mame2010|fbneo)
+            game_category=`grep ^${rom_name}= ${defaults_dir}/${target_platform}/catver.ini \
+                | head -1 \
+                | cut -f2 -d= \
+                | sed 's| \/|\/|g' \
+                | sed 's|\/ |\/|g'`
+            if [ "${flatten}" == "true" ]
+            then
+                game_category=`echo "${game_category}" | cut -f1 -d/`
+            fi
+            ;;
+        genesis)
+            game_category="Genesis"
+            ;;
+        nes)
+            game_category="NES"
+            ;;
+        snes)
+            game_category="Super NES"
+            ;;
+        atari2600)
+            game_category="Atari 2600"
+            ;;
+        colecovision)
+            game_category="ColecoVision"
+            ;;
+        gba)
+            game_category="GameBoy Advance"
+            ;;
+        supergrafx)
+            game_category="SuperGrafx"
+            ;;
+    esac
+    target_dir=${target_dir}/${game_category}
+fi
+uce_file=${target_dir}/AddOn_${sanitized_game_name}.UCE
+
+if [ "${keep_existing}" == "true" ]
+then
+    if [ -f "${uce_file}" ]
+    then
+        echo "UCE already exists at ${uce_file}. Keeping the existing UCE."
+        exit 0
+    fi
+fi
 
 staging_dir=${working_dir}/AddOn_${sanitized_game_name}
 mkdir -p "${staging_dir}/boxart"
@@ -626,50 +685,9 @@ md5sum "${save_temp_file}" \
     | xxd -r -p \
     | dd of="${game_temp_file}" ibs=16 count=1 obs=16 oflag=append conv=notrunc status=none
 
-if [ "${organize_targets}" == "true" ]
-then
-    # Determine which subdirectory to put the file into, depending on platform
-    case "${target_platform}"
-    in
-        mame2003plus|mame2010|fbneo)
-            game_category=`grep ^${rom_name}= ${defaults_dir}/${target_platform}/catver.ini \
-                | head -1 \
-                | cut -f2 -d= \
-                | sed 's| \/|\/|g' \
-                | sed 's|\/ |\/|g'`
-            if [ "${flatten}" == "true" ]
-            then
-                game_category=`echo "${game_category}" | cut -f1 -d/`
-            fi
-            ;;
-        genesis)
-            game_category="Genesis"
-            ;;
-        nes)
-            game_category="NES"
-            ;;
-        snes)
-            game_category="Super NES"
-            ;;
-        atari2600)
-            game_category="Atari 2600"
-            ;;
-        colecovision)
-            game_category="ColecoVision"
-            ;;
-        gba)
-            game_category="GameBoy Advance"
-            ;;
-        supergrafx)
-            game_category="SuperGrafx"
-            ;;
-    esac
-    target_dir=${target_dir}/${game_category}
-    mkdir -p "${target_dir}"
-fi
 
 # Finally, we tack our save file onto the end of the game file, and we're done
-uce_file=${target_dir}/AddOn_${sanitized_game_name}.UCE
+mkdir -p "${target_dir}"
 cat "${game_temp_file}" "${save_temp_file}" > "${uce_file}"
 
 echo "Creation complete! UCE file written to: ${uce_file}"
